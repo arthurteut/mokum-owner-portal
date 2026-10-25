@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Mokum · Portalul owner-ului</title>
+<link rel="icon" href="assets/atc-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<!-- Ecranul de intrare -->
+<div id="gate" class="gate hidden">
+  <div class="gate-card">
+    <div class="cobrand cobrand-lg">
+      <span class="mokum-word">Mokum</span>
+      <span class="x">×</span>
+      <img src="assets/atc-mark.png" alt="Around The Corner" class="atc-mark">
+    </div>
+    <h1>Portalul owner-ului</h1>
+    <p class="muted">Tot ce am construit împreună pentru Mokum, într-un singur loc: cifre, oameni, standarde și cursuri.</p>
+
+    <form id="login-form" class="hidden">
+      <label class="field"><span>Email</span>
+        <input type="email" id="login-email" autocomplete="email" required></label>
+      <label class="field"><span>Parolă</span>
+        <input type="password" id="login-pass" autocomplete="current-password" required minlength="6"></label>
+      <button type="submit" class="btn btn-primary btn-block">Intră în portal</button>
+      <p class="small"><a href="#" id="forgot">Ai uitat parola?</a></p>
+    </form>
+    <p id="no-backend" class="note hidden">Baza de date nu e conectată încă. Poți explora portalul cu date exemplu, iar modificările rămân doar în acest browser.</p>
+    <button type="button" id="demo-btn" class="btn btn-ghost btn-block">Deschide demo-ul cu date exemplu</button>
+    <p id="gate-msg" class="msg" aria-live="polite"></p>
+  </div>
+  <p class="gate-foot">Mokum × Around The Corner</p>
+</div>
+
+<!-- Aplicația -->
+<div id="app" class="app hidden">
+  <aside id="sidebar" class="sidebar" aria-label="Navigare">
+    <div class="sb-brand">
+      <span class="mokum-word">Mokum</span>
+      <span class="x">×</span>
+      <img src="assets/atc-mark.png" alt="Around The Corner" class="atc-mark">
+    </div>
+    <nav id="nav"></nav>
+    <div class="sb-foot">
+      <button type="button" class="linkbtn" data-route="setari">Setări &amp; backup</button>
+      <button type="button" class="linkbtn" id="logout-btn">Ieși</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="iconbtn menu-btn" id="menu-btn" aria-label="Meniu">☰</button>
+      <div class="tb-title">
+        <span class="eyebrow" id="page-group"></span>
+        <h1 id="page-title">Panou</h1>
+      </div>
+      <div class="tb-right">
+        <span class="badge" id="mode-badge"></span>
+        <span class="save-state" id="save-state" aria-live="polite"></span>
+        <label class="switch" title="Activează editarea">
+          <input type="checkbox" id="edit-toggle">
+          <span class="switch-track"><span class="switch-dot"></span></span>
+          <span class="switch-label">Editare</span>
+        </label>
+      </div>
+    </header>
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/demo-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
