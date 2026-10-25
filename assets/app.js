@@ -62,6 +62,11 @@
   };
   var sb = null;
 
+  // Linkurile din emailurile Supabase (invitație, resetare parolă) aduc
+  // token-ul sau eroarea în hash; le citim înainte să le consume clientul.
+  var AUTH_HASH = /access_token=|error_description=/.test(location.hash) ? location.hash : "";
+  var needsPassword = /type=(invite|recovery)/.test(AUTH_HASH);
+
   // ---------- Utilitare ----------
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -376,7 +381,18 @@
     $("gate").classList.remove("hidden");
     var live = !!sb;
     $("login-form").classList.toggle("hidden", !live);
+    $("setpass-form").classList.add("hidden");
     $("no-backend").classList.toggle("hidden", live);
+  }
+  function showSetPassword() {
+    showGate();
+    $("login-form").classList.add("hidden");
+    $("demo-btn").classList.add("hidden");
+    $("setpass-form").classList.remove("hidden");
+    $("new-pass").focus();
+  }
+  function clearAuthHash() {
+    if (window.history && history.replaceState) history.replaceState(null, "", location.pathname + location.search);
   }
 
   function initAuth() {
@@ -403,20 +419,39 @@
         });
     });
 
+    $("setpass-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var p1 = $("new-pass").value, p2 = $("new-pass2").value;
+      if (p1.length < 8) { gateMsg("Parola trebuie să aibă minimum 8 caractere."); return; }
+      if (p1 !== p2) { gateMsg("Cele două parole nu coincid."); return; }
+      gateMsg("");
+      sb.auth.updateUser({ password: p1 }).then(function (res) {
+        if (res.error) { gateMsg(authError(res.error)); return; }
+        needsPassword = false;
+        $("demo-btn").classList.remove("hidden");
+        loadLive(res.data.user);
+      });
+    });
+
+    if (/error_description=/.test(AUTH_HASH)) {
+      clearAuthHash();
+      showGate();
+      gateMsg(/expired|invalid/i.test(decodeURIComponent(AUTH_HASH))
+        ? "Linkul din email a expirat sau a fost deja folosit. Cere o invitație nouă sau folosește „Ai uitat parola?”."
+        : "Linkul din email nu a funcționat. Cere unul nou.");
+    }
+
     var started = false;
     sb.auth.onAuthStateChange(function (event, session) {
-      if (event === "PASSWORD_RECOVERY") {
-        var np = window.prompt("Alege o parolă nouă (minimum 8 caractere):");
-        if (np && np.length >= 8) {
-          sb.auth.updateUser({ password: np }).then(function (r) {
-            alert(r.error ? "Parola nu s-a schimbat: " + r.error.message : "Parola a fost schimbată.");
-          });
-        }
-      }
+      if (event === "PASSWORD_RECOVERY") needsPassword = true;
       if (session && session.user && !started) {
         started = true;
         // ieșim din callback înainte de alte apeluri Supabase
-        setTimeout(function () { loadLive(session.user); }, 0);
+        setTimeout(function () {
+          clearAuthHash();
+          if (needsPassword) showSetPassword();
+          else loadLive(session.user);
+        }, 0);
       }
       if (!session && event === "SIGNED_OUT") { started = false; }
     });

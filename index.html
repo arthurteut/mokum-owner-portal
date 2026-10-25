@@ -32,6 +32,14 @@
       <button type="submit" class="btn btn-primary btn-block">Intră în portal</button>
       <p class="small"><a href="#" id="forgot">Ai uitat parola?</a></p>
     </form>
+    <form id="setpass-form" class="hidden">
+      <p class="muted small">Bine ai venit! Alege parola cu care vei intra de acum în portal.</p>
+      <label class="field"><span>Parolă nouă (minimum 8 caractere)</span>
+        <input type="password" id="new-pass" autocomplete="new-password" required minlength="8"></label>
+      <label class="field"><span>Repetă parola</span>
+        <input type="password" id="new-pass2" autocomplete="new-password" required minlength="8"></label>
+      <button type="submit" class="btn btn-primary btn-block">Salvează parola și intră</button>
+    </form>
     <p id="no-backend" class="note hidden">Baza de date nu e conectată încă. Poți explora portalul cu date exemplu, iar modificările rămân doar în acest browser.</p>
     <button type="button" id="demo-btn" class="btn btn-ghost btn-block">Deschide demo-ul cu date exemplu</button>
     <p id="gate-msg" class="msg" aria-live="polite"></p>
