@@ -78,6 +78,14 @@ revoke all on function public.portal_docs_history() from public;
 grant execute on function public.is_portal_member() to authenticated;
 grant execute on function public.is_portal_atc() to authenticated;
 
+-- Expunere explicită prin Data API (proiectul nu expune automat tabelele noi).
+-- Doar utilizatorii autentificați; anonimii nu primesc nimic.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.portal_members to authenticated;
+grant select, insert, update, delete on public.portal_docs to authenticated;
+grant select on public.portal_history to authenticated;
+revoke all on public.portal_members, public.portal_docs, public.portal_history from anon;
+
 alter table public.portal_members enable row level security;
 alter table public.portal_docs enable row level security;
 alter table public.portal_history enable row level security;
