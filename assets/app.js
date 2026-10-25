@@ -3,9 +3,9 @@
   "use strict";
 
   var CFG = window.MOKUM_CONFIG || {};
-  var DEMO_KEY = "mokum-portal-demo-v1";
+  var DEMO_KEY = "mokum-portal-demo-v2";
   var THEME_KEY = "mokum-portal-theme";
-  var SECTIONS = ["pl", "kpi", "team", "courses", "org", "raci", "jobs", "playbook", "hospitality", "cjm", "equipment", "contacts"];
+  var SECTIONS = ["actions", "pl", "kpi", "team", "courses", "org", "raci", "jobs", "playbook", "hospitality", "cjm", "equipment", "contacts"];
   var MONTHS = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
   var MONTHS_LONG = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
@@ -22,12 +22,14 @@
     book: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7",
     cap: "M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5M22 9v6",
     cup: "M4 8h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 10h1.5a2.5 2.5 0 0 1 0 5H16M8 2v3M12 2v3",
-    phone: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"
+    phone: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2",
+    board: "M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z"
   };
 
   var NAV = [
     { name: "Conducere", items: [
       { id: "panou", title: "Panou", icon: "home" },
+      { id: "plan", title: "Plan de acțiune", icon: "board" },
       { id: "pl", title: "P&L", icon: "pl" },
       { id: "kpi", title: "KPI-uri", icon: "kpi" }
     ] },
@@ -94,6 +96,10 @@
     if (a >= 1e6) return nf1.format(v / 1e6) + "M";
     if (a >= 1e3) return nf0.format(v / 1e3) + "k";
     return nf0.format(v);
+  }
+  function compactMoney(v) {
+    if (!isNum(v)) return "—";
+    return (Math.abs(v) >= 1e5 ? nf0.format(v / 1e3) + "k" : nf0.format(v)) + " " + esc(cur());
   }
   function cur() { return (state.data.pl && state.data.pl.currency) || "RON"; }
   function parseNum(s) {
@@ -239,6 +245,7 @@
     });
     var years = {}; years[y] = { lines: lines };
     return {
+      actions: { items: [] },
       pl: { currency: "RON", targets: demo.pl.targets, years: years },
       kpi: { items: demo.kpi.items.map(function (k) { var c = clone(k); c.values = {}; return c; }) },
       team: { criteria: demo.team.criteria, members: [] },
@@ -247,7 +254,7 @@
       raci: { roles: demo.raci.roles, tasks: [] },
       jobs: { items: [] },
       playbook: { chapters: [] },
-      hospitality: { chapters: [] },
+      hospitality: { chapters: demo.hospitality.chapters },
       cjm: { stages: demo.cjm.stages.map(function (s) { return { id: s.id, name: s.name, emotion: 0 }; }), rows: demo.cjm.rows, cells: {} },
       equipment: { items: [] },
       contacts: { items: [] }
@@ -266,6 +273,7 @@
   }
 
   var NEW = {
+    action: function () { return { id: uid("a"), title: "", desc: "", area: "Operațiuni", owner: "", due: "", status: "todo", priority: false }; },
     kpi: function () { return { id: uid("k"), name: "KPI nou", unit: "", target: null, better: "up", owner: "", values: {} }; },
     criterion: function () { return { id: uid("c"), name: "Criteriu nou", weight: 10, desc: "" }; },
     member: function () { return { id: uid("m"), name: "Nume Prenume", role: "Barista", since: todayISO(), lastReview: "", scores: {}, courses: [], notes: "" }; },
@@ -473,6 +481,9 @@
     var badge = $("mode-badge");
     badge.textContent = state.mode === "demo" ? "Demo · date exemplu" : "Online";
     badge.className = "badge " + (state.mode === "demo" ? "demo" : "live");
+    var who = state.mode === "demo" ? "Demo" : (state.member && state.member.name) || state.user.email;
+    $("user-name").textContent = who;
+    $("user-avatar").textContent = initials(who);
     setSaveState("");
     buildNav();
     route();
@@ -480,10 +491,33 @@
 
   function buildNav() {
     $("nav").innerHTML = NAV.map(function (g) {
-      return '<div class="nav-group"><h4>' + esc(g.name) + "</h4>" + g.items.map(function (it) {
-        return '<button type="button" class="nav-item" data-route="' + it.id + '">' + icon(it.icon) + "<span>" + esc(it.title) + "</span></button>";
+      return '<div class="nav-group"><h4 class="eyebrow">' + esc(g.name) + "</h4>" + g.items.map(function (it) {
+        return '<button type="button" class="nav-item" data-route="' + it.id + '">' + icon(it.icon) + "<span>" + esc(it.title) +
+          '</span><span class="nav-count hidden" data-count="' + it.id + '"></span></button>';
       }).join("") + "</div>";
     }).join("");
+  }
+
+  // Contoarele din meniu și echipa din bara laterală urmăresc datele curente.
+  function refreshSidebar() {
+    var counts = {
+      plan: state.data.actions.items.filter(function (a) { return a.status === "doing"; }).length,
+      echipamente: state.data.equipment.items.filter(function (e) { var c = serviceStatus(e).c; return c === "bad" || c === "warn"; }).length
+    };
+    var els = document.querySelectorAll("[data-count]");
+    for (var i = 0; i < els.length; i++) {
+      var n = counts[els[i].getAttribute("data-count")];
+      els[i].textContent = n || "";
+      els[i].classList.toggle("hidden", !n);
+    }
+    var crit = state.data.team.criteria;
+    var list = state.data.team.members.map(function (m) { return { m: m, s: overall(m, crit) }; })
+      .sort(function (a, b) { return (isNum(b.s) ? b.s : -1) - (isNum(a.s) ? a.s : -1); });
+    $("sb-members").innerHTML = list.length ? '<h4 class="eyebrow"><span>Echipa</span><a href="#/echipa" class="small" style="letter-spacing:0;text-transform:none">Toți</a></h4>' +
+      list.slice(0, 6).map(function (x) {
+        return '<a class="sb-member" href="#/echipa"><span class="avatar avatar-sm">' + esc(initials(x.m.name)) + '</span><span><div class="n">' + esc(x.m.name) +
+          '</div><div class="r">' + esc(x.m.role) + '</div></span><span class="s">' + (isNum(x.s) ? nf0.format(x.s) : "–") + "</span></a>";
+      }).join("") : "";
   }
 
   function findNav(id) {
@@ -500,6 +534,7 @@
     var id = (location.hash || "").replace(/^#\/?/, "") || "panou";
     if (!findNav(id) || !VIEWS[id]) id = "panou";
     state.route = id;
+    document.body.setAttribute("data-page", id);
     var nav = findNav(id);
     $("page-title").textContent = nav.item.title;
     $("page-group").textContent = nav.group;
@@ -516,7 +551,7 @@
 
   function render() {
     var html = "";
-    if (state.edit) {
+    if (state.edit && state.route !== "panou" && state.route !== "plan") {
       html += '<div class="edit-banner">Mod editare: modificările se salvează automat' +
         (state.mode === "demo" ? " (doar în acest browser, în demo)." : " pentru toți cei cu acces.") + "</div>";
     }
@@ -527,6 +562,7 @@
       if (window.console) console.error(err);
     }
     $("view").innerHTML = html;
+    refreshSidebar();
   }
 
   // Re-randare după o modificare, păstrând câmpul în care lucrează utilizatorul.
@@ -657,6 +693,8 @@
       return "cjm";
     },
     "set-ui": function (d) { state.ui[d.key] = d.val; return ""; },
+    "action-new": function (d) { openAction(null, d.status); return null; },
+    "action-open": function (d) { openAction(d.id); return null; },
     export: function () { exportJSON(); return null; },
     import: function () { $("import-file") && $("import-file").click(); return null; },
     "load-demo": function () {
@@ -718,6 +756,8 @@
       }).then(function () { location.hash = ""; location.reload(); });
     });
     window.addEventListener("hashchange", function () { if (state.mode) route(); });
+    bindBoardDrag();
+    bindSearch();
   }
 
   // ---------- Temă, export, import ----------
@@ -811,8 +851,9 @@
   }
 
   // ---------- Grafice SVG ----------
-  function barChart(labels, series) {
-    var W = 720, H = 230, L = 52, R = 8, T = 12, B = 28;
+  function barChart(labels, series, opts) {
+    opts = opts || {};
+    var W = opts.w || 720, H = opts.h || 230, L = 46, R = 8, T = 12, B = 28;
     var all = [];
     series.forEach(function (s) { s.values.forEach(function (v) { if (isNum(v)) all.push(v); }); });
     if (!all.length) return '<div class="empty">Nu există încă date pentru grafic.</div>';
@@ -820,8 +861,9 @@
     var step = niceStep((max - min) / 4 || 1);
     max = Math.ceil(max / step) * step; min = Math.floor(min / step) * step;
     var y = function (v) { return T + (H - T - B) * (1 - (v - min) / (max - min || 1)); };
-    var gw = (W - L - R) / labels.length, bw = Math.min(18, (gw * 0.7) / series.length);
-    var out = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Grafic">';
+    var gw = (W - L - R) / labels.length, bw = Math.min(opts.bar || 18, (gw * 0.7) / series.length);
+    var pid = "h" + (++patternSeq);
+    var out = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Grafic">' + hatchDef(pid);
     for (var t = min; t <= max + step / 2; t += step) {
       out += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t) + '" y2="' + y(t) + '"/>' +
         '<text x="' + (L - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + compact(t) + "</text>";
@@ -833,13 +875,35 @@
         if (!isNum(v)) return;
         var y0 = y(0), y1 = y(v);
         out += '<rect x="' + (gx + j * bw) + '" y="' + Math.min(y0, y1) + '" width="' + (bw - 2) + '" height="' + Math.max(1, Math.abs(y1 - y0)) +
-          '" rx="3" fill="' + s.color + '"><title>' + esc(s.name + " " + lb + ": " + money(v)) + "</title></rect>";
+          '" rx="3" fill="' + (s.hatch ? "url(#" + pid + ")" : s.color) + '" style="color:' + s.color + '"><title>' + esc(s.name + " " + lb + ": " + money(v)) + "</title></rect>";
       });
       out += '<text x="' + (L + gw * i + gw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(lb) + "</text>";
     });
     out += "</svg>";
-    out += '<div class="legend">' + series.map(function (s) { return '<span><i style="background:' + s.color + '"></i>' + esc(s.name) + "</span>"; }).join("") + "</div>";
+    out += '<div class="legend">' + series.map(function (s) {
+      return '<span><i style="background:' + (s.hatch ? "repeating-linear-gradient(45deg," + s.color + " 0 2px,transparent 2px 5px)" : s.color) + '"></i>' + esc(s.name) + "</span>";
+    }).join("") + "</div>";
     return '<div class="chart">' + out + "</div>";
+  }
+  var patternSeq = 0;
+  function hatchDef(id) {
+    return '<defs><pattern id="' + id + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+      '<rect width="2.4" height="6" fill="currentColor"/></pattern></defs>';
+  }
+  // Semicerc din liniuțe, ca în referință: liniuțele pline arată procentul.
+  function gauge(value, label) {
+    var n = 44, cx = 140, cy = 132, r1 = 104, r2 = 124, out = "";
+    var filled = isNum(value) ? Math.round((value / 100) * n) : 0;
+    for (var i = 0; i <= n; i++) {
+      var a = Math.PI - (Math.PI * i) / n, long = i % 4 === 0;
+      var ri = long ? r1 - 6 : r1;
+      out += '<line x1="' + (cx + ri * Math.cos(a)).toFixed(1) + '" y1="' + (cy - ri * Math.sin(a)).toFixed(1) +
+        '" x2="' + (cx + r2 * Math.cos(a)).toFixed(1) + '" y2="' + (cy - r2 * Math.sin(a)).toFixed(1) +
+        '" stroke="' + (i < filled ? "var(--ink)" : "var(--line-strong)") + '" stroke-width="' + (long ? 2.2 : 1.6) + '" stroke-linecap="round"/>';
+    }
+    return '<div class="gauge"><svg viewBox="0 0 280 150" role="img" aria-label="' + esc(label + ": " + pct(value)) + '">' + out +
+      '<text x="140" y="112" text-anchor="middle" font-size="36" font-weight="700" fill="var(--ink)" font-family="var(--font)">' + (isNum(value) ? nf0.format(value) + "%" : "—") + "</text>" +
+      '<text x="140" y="140" text-anchor="middle" font-size="15" fill="var(--ink-soft)" font-family="var(--font)">' + esc(label) + "</text></svg></div>";
   }
   function niceStep(raw) {
     var p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p;
@@ -946,83 +1010,264 @@
     return '<span class="' + (ok ? "delta-good" : "delta-bad") + '">țintă ' + (lowerBetter ? "≤ " : "≥ ") + nf0.format(t) + "%</span>";
   }
 
+  // ---------- Plan de acțiune (board) ----------
+  var COLUMNS = [
+    { id: "todo", name: "De făcut" },
+    { id: "doing", name: "În lucru" },
+    { id: "review", name: "De verificat" },
+    { id: "done", name: "Gata" }
+  ];
+  var AREAS = ["Brand", "Bar", "Sală", "Oameni", "Operațiuni", "Financiar"];
+  var CAL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+  function shortDate(iso) {
+    if (!iso) return "Fără termen";
+    var p = String(iso).split("-");
+    return Number(p[2]) + " " + MONTHS[Number(p[1]) - 1];
+  }
+  function actionCard(a) {
+    var d = daysUntil(a.due), late = a.status !== "done" && d != null && d < 0;
+    var cls = "acard" + (a.status === "done" ? " done" : a.priority ? " prio" : "");
+    return '<div role="button" tabindex="0" class="' + cls + '" draggable="true" data-id="' + esc(a.id) + '" data-act="action-open">' +
+      '<div class="top"><span class="area">' + esc(a.area || "") + "</span>" + (a.priority && a.status !== "done" ? '<span class="area">Prioritar</span>' : "") + "</div>" +
+      "<h4>" + esc(a.title || "Fără titlu") + "</h4>" + (a.desc ? "<p>" + esc(a.desc) + "</p>" : "") +
+      '<div class="meta"><span class="chip' + (late ? " late" : "") + '">' + CAL + esc(shortDate(a.due)) + "</span>" +
+      (a.owner ? '<span class="who"><span class="avatar avatar-xs">' + esc(initials(a.owner)) + "</span>" + esc(a.owner) + "</span>" : "") + "</div></div>";
+  }
+  function boardHtml() {
+    var items = state.data.actions.items;
+    return '<div class="board">' + COLUMNS.map(function (c) {
+      var list = items.filter(function (a) { return (a.status || "todo") === c.id; });
+      if (c.id !== "done") list.sort(function (a, b) { return (b.priority ? 1 : 0) - (a.priority ? 1 : 0) || String(a.due || "9999").localeCompare(String(b.due || "9999")); });
+      return '<section class="col" data-col="' + c.id + '" aria-label="' + esc(c.name) + '"><div class="col-head"><h3>' + c.name + '</h3><span class="col-count">' + list.length + "</span></div>" +
+        list.map(actionCard).join("") +
+        '<button type="button" class="col-add" data-act="action-new" data-status="' + c.id + '">+ Adaugă</button></section>';
+    }).join("") + "</div>";
+  }
+
+  function openAction(id, status) {
+    var items = state.data.actions.items;
+    var a = id ? items.filter(function (x) { return x.id === id; })[0] : null;
+    var v = a ? clone(a) : NEW.action();
+    if (!a && status) v.status = status;
+    var people = {};
+    state.data.team.members.forEach(function (m) { people[m.name] = true; });
+    ["Owner", "Manager", "Head barista", "ATC"].forEach(function (r) { people[r] = true; });
+    var m = $("modal");
+    m.innerHTML = '<form method="dialog" id="action-form"><h2 id="modal-title">' + (a ? "Acțiune" : "Acțiune nouă") + "</h2>" +
+      '<label class="field"><span>Titlu</span><input id="af-title" required maxlength="120" value="' + esc(v.title) + '"></label>' +
+      '<label class="field"><span>Detalii</span><textarea id="af-desc" class="inp" rows="3">' + esc(v.desc) + "</textarea></label>" +
+      '<div class="row2"><label class="field"><span>Zonă</span><select id="af-area">' + AREAS.map(function (x) { return "<option" + (x === v.area ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></label>" +
+      '<label class="field"><span>Stadiu</span><select id="af-status">' + COLUMNS.map(function (c) { return '<option value="' + c.id + '"' + (c.id === v.status ? " selected" : "") + ">" + c.name + "</option>"; }).join("") + "</select></label></div>" +
+      '<div class="row2"><label class="field"><span>Responsabil</span><input id="af-owner" list="af-people" value="' + esc(v.owner) + '"><datalist id="af-people">' +
+      Object.keys(people).map(function (p) { return '<option value="' + esc(p) + '">'; }).join("") + "</datalist></label>" +
+      '<label class="field"><span>Termen</span><input type="date" id="af-due" value="' + esc(v.due) + '"></label></div>' +
+      '<label class="small" style="display:flex;gap:8px;align-items:center;margin:2px 0 14px"><input type="checkbox" id="af-prio"' + (v.priority ? " checked" : "") + "> Prioritar (apare evidențiat pe board)</label>" +
+      '<div class="actions">' + (a ? '<button type="button" class="btn btn-ghost btn-danger" id="af-del">Șterge</button><span class="spacer"></span>' : "") +
+      '<button type="button" class="btn btn-ghost" id="af-cancel">Anulează</button><button type="submit" class="btn btn-primary">Salvează</button></div></form>';
+    $("af-cancel").onclick = function () { m.close(); };
+    if (a) $("af-del").onclick = function () {
+      if (!window.confirm("Ștergi acțiunea „" + a.title + "”?")) return;
+      items.splice(items.indexOf(a), 1);
+      markDirty("actions"); m.close(); render();
+    };
+    $("action-form").onsubmit = function (e) {
+      e.preventDefault();
+      var t = $("af-title").value.trim();
+      if (!t) return;
+      var target = a || v;
+      target.title = t;
+      target.desc = $("af-desc").value.trim();
+      target.area = $("af-area").value;
+      target.status = $("af-status").value;
+      target.owner = $("af-owner").value.trim();
+      target.due = $("af-due").value;
+      target.priority = $("af-prio").checked;
+      if (!a) items.push(target);
+      markDirty("actions"); m.close(); render();
+    };
+    if (m.showModal) m.showModal(); else m.setAttribute("open", "");
+    $("af-title").focus();
+  }
+
+  function bindBoardDrag() {
+    var view = $("view"), dragId = null;
+    view.addEventListener("keydown", function (e) {
+      var c = e.target.closest && e.target.closest('.acard[role="button"]');
+      if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openAction(c.getAttribute("data-id")); }
+    });
+    view.addEventListener("dragstart", function (e) {
+      var c = e.target.closest && e.target.closest(".acard");
+      if (!c) return;
+      dragId = c.getAttribute("data-id");
+      c.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", dragId); } catch (err) { /* Safari vechi */ }
+    });
+    view.addEventListener("dragend", function () {
+      dragId = null;
+      var els = view.querySelectorAll(".dragging, .drop");
+      for (var i = 0; i < els.length; i++) els[i].classList.remove("dragging", "drop");
+    });
+    view.addEventListener("dragover", function (e) {
+      var col = dragId && e.target.closest && e.target.closest("[data-col]");
+      if (!col) return;
+      e.preventDefault();
+      var els = view.querySelectorAll(".col.drop");
+      for (var i = 0; i < els.length; i++) if (els[i] !== col) els[i].classList.remove("drop");
+      col.classList.add("drop");
+    });
+    view.addEventListener("drop", function (e) {
+      var col = dragId && e.target.closest && e.target.closest("[data-col]");
+      if (!col) return;
+      e.preventDefault();
+      var a = state.data.actions.items.filter(function (x) { return x.id === dragId; })[0];
+      var to = col.getAttribute("data-col");
+      if (a && a.status !== to) { a.status = to; markDirty("actions"); }
+      dragId = null;
+      render();
+    });
+  }
+
+  // ---------- Căutare globală ----------
+  function searchIndex() {
+    var d = state.data, out = [];
+    function add(title, where, routeId, extra) { out.push({ t: title || "", w: where, r: routeId, x: (extra || "").toLowerCase() }); }
+    NAV.forEach(function (g) { g.items.forEach(function (it) { add(it.title, "Secțiune", it.id); }); });
+    d.actions.items.forEach(function (a) { add(a.title, "Plan de acțiune", "plan", a.desc + " " + a.owner + " " + a.area); });
+    d.team.members.forEach(function (m) { add(m.name, "Echipa", "echipa", m.role); });
+    d.contacts.items.forEach(function (c) { add(c.name, "Contacte", "contacte", [c.person, c.category, c.phone, c.email, c.notes].join(" ")); });
+    d.equipment.items.forEach(function (e) { add(e.name, "Echipamente", "echipamente", e.brand + " " + e.supplier); });
+    d.courses.items.forEach(function (c) { add(c.title, "Cursuri ATC", "cursuri", c.module + " " + c.desc); });
+    d.kpi.items.forEach(function (k) { add(k.name, "KPI-uri", "kpi", k.owner); });
+    d.jobs.items.forEach(function (j) { add(j.title, "Fișele posturilor", "fise", j.purpose); });
+    d.playbook.chapters.forEach(function (c) { add(c.title, "Playbook", "playbook", c.body); });
+    d.hospitality.chapters.forEach(function (c) { add(c.title, "Ospitalitate", "ospitalitate", c.body); });
+    d.raci.tasks.forEach(function (t) { add(t.name, "RACI", "raci", t.area); });
+    return out;
+  }
+  function bindSearch() {
+    var input = $("search"), box = $("search-results"), active = -1, hits = [];
+    function close() { box.classList.add("hidden"); active = -1; }
+    function go(h) { input.value = ""; close(); location.hash = "#/" + h.r; if (state.route === h.r) route(); }
+    function paint() {
+      box.innerHTML = hits.length ? hits.map(function (h, i) {
+        return '<a href="#/' + h.r + '" data-i="' + i + '"' + (i === active ? ' class="active"' : "") + "><span>" + esc(h.t) + '</span><span class="where">' + esc(h.w) + "</span></a>";
+      }).join("") : '<div class="small muted" style="padding:10px 12px">Niciun rezultat.</div>';
+      box.classList.remove("hidden");
+    }
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      if (q.length < 2) { close(); return; }
+      hits = searchIndex().filter(function (h) { return h.t.toLowerCase().indexOf(q) !== -1 || h.x.indexOf(q) !== -1; })
+        .sort(function (a, b) { return (b.t.toLowerCase().indexOf(q) === 0) - (a.t.toLowerCase().indexOf(q) === 0); }).slice(0, 10);
+      active = hits.length ? 0 : -1;
+      paint();
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { input.value = ""; close(); input.blur(); }
+      else if (e.key === "ArrowDown" && hits.length) { e.preventDefault(); active = (active + 1) % hits.length; paint(); }
+      else if (e.key === "ArrowUp" && hits.length) { e.preventDefault(); active = (active - 1 + hits.length) % hits.length; paint(); }
+      else if (e.key === "Enter" && hits[active]) { e.preventDefault(); go(hits[active]); }
+    });
+    box.addEventListener("mousedown", function (e) {
+      var a = e.target.closest("a[data-i]");
+      if (a) { e.preventDefault(); go(hits[Number(a.getAttribute("data-i"))]); }
+    });
+    input.addEventListener("blur", function () { setTimeout(close, 120); });
+  }
+
   // ================= VIEWS =================
   var VIEWS = {};
 
   VIEWS.panou = function () {
     var d = state.data, h = "";
     var last = lastPlMonth(), tg = d.pl.targets || {};
-    h += '<p class="intro">Bună! Aici ai, dintr-o privire, starea Mokum: cifrele ultimei luni închise, KPI-urile, echipa și ce urmează la operațiuni.</p>';
 
+    // Banda de sus: venituri pe ultimele 6 luni, KPI-uri în țintă, acțiuni în lucru, venitul lunii
+    var key = latestKpiMonth(), counts = { good: 0, warn: 0, bad: 0, neutral: 0 }, attention = [];
+    d.kpi.items.forEach(function (k) {
+      var v = kpiValue(k, key), st = kpiStatus(k, v);
+      counts[st]++;
+      if (st === "bad" || st === "warn") attention.push({ k: k, v: v, s: st });
+    });
+    var withData = counts.good + counts.warn + counts.bad;
+    var kpiPct = withData ? (counts.good / withData) * 100 : null;
+    var doing = d.actions.items.filter(function (a) { return a.status === "doing"; }).length;
+    var labels = [], rev = [], ebitda = [];
     if (last) {
-      var r = plRatios(last.calc, last.m);
-      var prev = last.m > 0 && last.calc.has[last.m - 1] ? last.calc.rev[last.m - 1] : null;
-      var delta = isNum(prev) && prev ? ((r.rev - prev) / prev) * 100 : null;
-      h += '<div class="section" style="margin-top:0"><h2>' + esc(MONTHS_LONG[last.m]) + " " + esc(last.year) + "</h2>";
+      for (var i = 5; i >= 0; i--) {
+        var m = last.m - i;
+        if (m < 0) continue;
+        labels.push(MONTHS[m]); rev.push(last.calc.rev[m]); ebitda.push(last.calc.ebitda[m]);
+      }
+    }
+    var r = last ? plRatios(last.calc, last.m) : null;
+    var arrow = '<svg class="arrow" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"/></svg>';
+    h += '<div class="hero">' +
+      '<div><h3>Venituri și EBITDA</h3>' + (labels.length ? barChart(labels, [{ name: "Venituri", color: "var(--chart-1)", values: rev }, { name: "EBITDA", color: "var(--chart-1)", values: ebitda, hatch: true }], { w: 440, h: 220, bar: 26 }) : '<div class="muted">Încă nu există cifre în P&L.</div>') + "</div>" +
+      gauge(kpiPct, "KPI-uri în țintă") +
+      '<div class="hero-num"><a href="#/plan"><div class="big">' + doing + '</div><div class="foot"><span>Acțiuni<br>în lucru</span>' + arrow + "</div></a></div>" +
+      '<div class="hero-num"><a href="#/pl"><div class="big">' + (r ? compactMoney(r.rev) : "—") + '</div><div class="foot"><span>Venituri<br>' + (last ? esc(MONTHS_LONG[last.m]) : "luna curentă") + "</span>" + arrow + "</div></a></div>" +
+      "</div>";
+
+    // Planul de acțiune
+    h += '<div class="card-head"><h2 class="section-title" style="margin:0">Plan de acțiune</h2><a href="#/plan">Deschide planul</a></div>' + boardHtml();
+
+    // Luna în cifre
+    if (r) {
+      h += '<div class="section"><h2>' + esc(MONTHS_LONG[last.m].charAt(0).toUpperCase() + MONTHS_LONG[last.m].slice(1)) + " " + esc(last.year) + " în cifre</h2>";
       h += '<div class="grid grid-4">' +
-        statCard("Venituri", moneyC(r.rev), isNum(delta) ? '<span class="' + (delta >= 0 ? "delta-good" : "delta-bad") + '">' + (delta >= 0 ? "▲ " : "▼ ") + nf1.format(Math.abs(delta)) + "%</span> față de luna anterioară" : "") +
         statCard("Marjă brută", pct(r.grossPct), "COGS " + pct(r.cogsPct) + " · " + vsTarget(r.cogsPct, tg.cogsPct, true)) +
         statCard("EBITDA", moneyC(r.ebitda), pct(r.ebitdaPct) + " din venituri · " + vsTarget(r.ebitdaPct, tg.ebitdaPct, false)) +
         statCard("Prime cost", pct(r.primePct), "personal " + pct(r.laborPct) + " · " + vsTarget(r.primePct, tg.primePct, true)) +
+        statCard("Profit net", moneyC(r.net), pct(r.netPct) + " din venituri") +
         "</div></div>";
-    } else {
-      h += '<div class="empty">Încă nu există cifre în P&L. <a href="#/pl">Completează prima lună</a>.</div>';
     }
 
-    // KPI
-    var key = latestKpiMonth(), counts = { good: 0, warn: 0, bad: 0, neutral: 0 }, bad = [];
-    d.kpi.items.forEach(function (k) {
-      var v = kpiValue(k, key), s = kpiStatus(k, v);
-      counts[s]++;
-      if (s === "bad" || s === "warn") bad.push({ k: k, v: v, s: s });
-    });
-    var kpiCard = '<div class="card"><div class="card-head"><h3>KPI-uri · ' + esc(monthLabel(key)) + '</h3><a href="#/kpi" class="small">Toate →</a></div>' +
+    // Ce cere atenție
+    var kpiCard = '<div class="card"><div class="card-head"><h3>KPI-uri · ' + esc(monthLabel(key)) + '</h3><a href="#/kpi">Toate</a></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + pill("good", counts.good + " în țintă") + pill("warn", counts.warn + " aproape") + pill("bad", counts.bad + " sub țintă") + "</div>" +
-      (bad.length ? '<table class="tbl"><tbody>' + bad.slice(0, 5).map(function (b) {
+      (attention.length ? '<table class="tbl"><tbody>' + attention.slice(0, 5).map(function (b) {
         return "<tr><td>" + esc(b.k.name) + '</td><td class="num">' + kpiFmt(b.k, b.v) + '</td><td class="num">' + pill(b.s, STATUS_LABEL[b.s]) + "</td></tr>";
       }).join("") + "</tbody></table>" : '<p class="muted small">Toate KPI-urile cu date sunt în țintă.</p>') + "</div>";
-
-    // Echipa
-    var crit = d.team.criteria, scored = d.team.members.map(function (m) { return { m: m, s: overall(m, crit) }; })
-      .filter(function (x) { return isNum(x.s); }).sort(function (a, b) { return b.s - a.s; });
-    var avg = scored.length ? sum(scored.map(function (x) { return x.s; })) / scored.length : null;
-    var teamCard = '<div class="card"><div class="card-head"><h3>Echipa</h3><a href="#/echipa" class="small">Detalii →</a></div>' +
-      '<div class="stat"><div class="label">Media echipei</div><div class="value">' + (isNum(avg) ? nf0.format(avg) : "—") + '<small class="muted" style="font-size:14px"> / 100</small></div></div>' +
-      (scored.length ? '<table class="tbl" style="margin-top:10px"><tbody>' + scored.map(function (x) {
-        var lv = level(x.s);
-        return "<tr><td>" + esc(x.m.name) + '<div class="small muted">' + esc(x.m.role) + '</div></td><td class="num">' + nf0.format(x.s) + '</td><td class="num">' + pill(lv.c, lv.l) + "</td></tr>";
-      }).join("") + "</tbody></table>" : '<p class="muted small">Niciun barista evaluat încă.</p>') + "</div>";
-
-    // Echipamente
     var due = d.equipment.items.map(function (e) { return { e: e, s: serviceStatus(e) }; })
       .filter(function (x) { return x.s.c === "bad" || x.s.c === "warn"; })
       .sort(function (a, b) { return a.s.d - b.s.d; });
-    var eqCard = '<div class="card"><div class="card-head"><h3>Service echipamente</h3><a href="#/echipamente" class="small">Lista →</a></div>' +
+    var eqCard = '<div class="card"><div class="card-head"><h3>Service echipamente</h3><a href="#/echipamente">Lista</a></div>' +
       (due.length ? '<table class="tbl"><tbody>' + due.map(function (x) {
         return "<tr><td>" + esc(x.e.name) + '<div class="small muted">' + esc(x.e.brand) + '</div></td><td class="num">' + pill(x.s.c, x.s.l) + "</td></tr>";
       }).join("") + "</tbody></table>" : '<p class="muted small">Nimic programat în următoarele 30 de zile.</p>') + "</div>";
-
-    // Academie
     var courseIds = d.courses.items.map(function (c) { return c.id; });
     var possible = courseIds.length * d.team.members.length, done = 0;
     d.team.members.forEach(function (m) { (m.courses || []).forEach(function (c) { if (courseIds.indexOf(c) !== -1) done++; }); });
     var acPct = possible ? (done / possible) * 100 : null;
-    var acCard = '<div class="card"><div class="card-head"><h3>Academia ATC</h3><a href="#/cursuri" class="small">Cursuri →</a></div>' +
-      '<div class="stat"><div class="label">Parcurs de training finalizat</div><div class="value">' + pct(acPct) + "</div>" +
-      '<div class="sub">' + done + " din " + possible + " cursuri × oameni</div></div>" +
-      '<div class="bar" style="margin-top:10px"><span style="width:' + (acPct || 0) + '%"></span></div></div>';
+    var crit = d.team.criteria, scored = d.team.members.map(function (m) { return overall(m, crit); }).filter(isNum);
+    var avg = scored.length ? sum(scored) / scored.length : null;
+    var acCard = '<div class="card"><div class="card-head"><h3>Echipa & Academia ATC</h3><a href="#/cursuri">Cursuri</a></div>' +
+      '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+      '<div class="stat"><div class="label">Media echipei</div><div class="value">' + (isNum(avg) ? nf0.format(avg) : "—") + '<small class="muted" style="font-size:14px;font-weight:400"> /100</small></div></div>' +
+      '<div class="stat"><div class="label">Training finalizat</div><div class="value">' + (isNum(acPct) ? nf0.format(acPct) + "%" : "—") + "</div></div></div>" +
+      '<div class="bar" style="margin-top:14px"><span style="width:' + (acPct || 0) + '%"></span></div>' +
+      '<div class="small muted" style="margin-top:6px">' + done + " din " + possible + " cursuri × oameni</div></div>";
+    h += '<div class="section"><h2>Ce cere atenție</h2><div class="grid grid-3">' + kpiCard + eqCard + acCard + "</div></div>";
 
-    h += '<div class="section"><h2>Ce cere atenție</h2><div class="grid grid-2">' + kpiCard + teamCard + eqCard + acCard + "</div></div>";
-
-    // Acces rapid
-    var quick = [["playbook", "Playbook", d.playbook.chapters.length + " capitole"], ["ospitalitate", "Direcția de ospitalitate", d.hospitality.chapters.length + " capitole"],
-      ["organigrama", "Organigramă", d.org.nodes.length + " roluri"], ["raci", "RACI", d.raci.tasks.length + " activități"],
-      ["fise", "Fișele posturilor", d.jobs.items.length + " posturi"], ["cjm", "Customer Journey Map", d.cjm.stages.length + " etape"],
-      ["contacte", "Contacte", d.contacts.items.length + " contacte"], ["cursuri", "Cursuri ATC", d.courses.items.length + " cursuri"]];
+    // Documentele Mokum
+    var quick = [["ospitalitate", "Direcția de ospitalitate", d.hospitality.chapters.length + " capitole"], ["playbook", "Playbook", d.playbook.chapters.length + " capitole"],
+      ["cjm", "Customer Journey Map", d.cjm.stages.length + " etape"], ["organigrama", "Organigramă", d.org.nodes.length + " roluri"],
+      ["raci", "RACI", d.raci.tasks.length + " activități"], ["fise", "Fișele posturilor", d.jobs.items.length + " posturi"],
+      ["cursuri", "Cursuri ATC", d.courses.items.length + " cursuri"], ["contacte", "Contacte", d.contacts.items.length + " contacte"]];
     h += '<div class="section"><h2>Documentele Mokum</h2><div class="grid grid-4">' + quick.map(function (q) {
-      return '<a class="card" href="#/' + q[0] + '" style="text-decoration:none;color:inherit"><h3 style="margin-bottom:4px">' + esc(q[1]) + '</h3><div class="small muted">' + esc(q[2]) + "</div></a>";
+      return '<a class="card" href="#/' + q[0] + '" style="text-decoration:none;color:inherit"><div class="label-caps">' + esc(q[2]) + '</div><h3 style="margin:6px 0 0">' + esc(q[1]) + "</h3></a>";
     }).join("") + "</div></div>";
     return h;
+  };
+
+  VIEWS.plan = function () {
+    var items = state.data.actions.items;
+    var late = items.filter(function (a) { var x = daysUntil(a.due); return a.status !== "done" && x != null && x < 0; }).length;
+    return '<p class="intro">Tot ce avem de făcut împreună pentru Mokum. Trage un card dintr-o coloană în alta ca să-i schimbi stadiul; apasă pe el ca să-l editezi.</p>' +
+      (late ? '<p>' + pill("bad", late + (late === 1 ? " acțiune depășită" : " acțiuni depășite")) + "</p>" : "") +
+      boardHtml();
   };
 
   VIEWS.pl = function () {
@@ -1474,7 +1719,7 @@
       '<input type="file" id="import-file" accept="application/json,.json" class="hidden"></div>' +
       (state.mode === "demo" ? btn("reset-demo", "Resetează demo-ul", {}, "btn-ghost btn-danger") : btn("load-demo", "Încarcă datele exemplu", {}, "btn-ghost btn-danger")) + "</div>";
     h += "</div>";
-    var labels = { pl: "P&L", kpi: "KPI-uri", team: "Echipa", courses: "Cursuri", org: "Organigramă", raci: "RACI", jobs: "Fișe post", playbook: "Playbook", hospitality: "Ospitalitate", cjm: "Customer Journey", equipment: "Echipamente", contacts: "Contacte" };
+    var labels = { actions: "Plan de acțiune", pl: "P&L", kpi: "KPI-uri", team: "Echipa", courses: "Cursuri", org: "Organigramă", raci: "RACI", jobs: "Fișe post", playbook: "Playbook", hospitality: "Ospitalitate", cjm: "Customer Journey", equipment: "Echipamente", contacts: "Contacte" };
     h += '<div class="section"><h2>Ultimele actualizări</h2><div class="table-wrap"><table class="tbl"><thead><tr><th>Secțiune</th><th>Actualizat</th><th>De</th></tr></thead><tbody>' +
       SECTIONS.map(function (s) {
         var m = state.meta[s];

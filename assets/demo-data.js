@@ -1,7 +1,8 @@
 /*
  * Date exemplu pentru scheletul portalului.
- * Toate cifrele, numele și contactele de aici sunt fictive: se înlocuiesc
- * cu materialele reale ATC pentru Mokum.
+ * Cifrele, numele și contactele de aici sunt fictive și se înlocuiesc cu
+ * materialele reale ATC. Excepție: Direcția de ospitalitate și capitolul
+ * „Cine suntem” sunt preluate din Mokum Brandbook v2.0.
  */
 window.MOKUM_DEMO = function () {
   "use strict";
@@ -133,7 +134,7 @@ window.MOKUM_DEMO = function () {
 
   var org = {
     nodes: [
-      { id: "n1", title: "Owner", person: "Proprietar Mokum", parent: "", external: false },
+      { id: "n1", title: "Owner", person: "Mokum · Timișoara", parent: "", external: false },
       { id: "n2", title: "Manager cafenea", person: "de numit", parent: "n1", external: false },
       { id: "n3", title: "Head barista", person: "Andrei Pop", parent: "n2", external: false },
       { id: "n4", title: "Bariști", person: "Ioana, Vlad, Maria, Radu", parent: "n3", external: false },
@@ -208,7 +209,7 @@ window.MOKUM_DEMO = function () {
 
   var playbook = {
     chapters: [
-      { id: "p1", title: "Cine suntem", body: "Mokum este cafeneaua de cartier în care **cafeaua bună e un pretext pentru oameni**.\n\n### Misiune\nFiecare client pleacă puțin mai bine decât a venit.\n\n### Valorile noastre\n- **Căldură**: tratăm pe toată lumea ca pe un vecin.\n- **Meșteșug**: fiecare ceașcă e calibrată, gustată, asumată.\n- **Constanță**: aceeași experiență, la orice oră, cu oricine din echipă.\n- **Curiozitate**: învățăm continuu, împreună cu Around The Corner.\n\n> Material de înlocuit cu textul final din workshop-ul de brand." },
+      { id: "p1", title: "Cine suntem", body: "Mokum a fost fondată în 2010, pe strada Eugeniu de Savoia, în Piața Unirii. A fost prima cafenea de specialitate din Timișoara și printre primele din România care a introdus cafeaua to-go ca un concept, nu ca un compromis.\n\nComunitatea formată în jurul ei, preponderent arhitecți și designeri, este o audiență cu ochi exersat, care evaluează înainte să consume. Nu trebuie construită de la zero: trebuie reactivată și onorată.\n\n> Mutăm autoritatea din discurs în ceașcă.\n\nDetaliile despre ton și serviciu sunt în **Direcția de ospitalitate**." },
       { id: "p2", title: "O zi la Mokum", body: "### Deschidere (07:00–07:45)\n1. Pornește espressorul și râșnițele (minim 30 min încălzire).\n2. Backflush cu apă, purjă la toate grupurile.\n3. Calibrare: 18 g → 38 g în 27–30 s; gustă și notează în registru.\n4. Verifică frigiderele (≤ 4 °C) și notează temperaturile.\n5. Vitrina: patiseria aranjată, etichete cu prețuri și alergeni.\n\n### În timpul zilei\n- Recalibrează la fiecare 2 ore sau când se schimbă cafeaua.\n- Stația curată după fiecare val de comenzi.\n\n### Închidere\n1. Backflush cu detergent, curățarea grupurilor și a portafiltrelor.\n2. Golește și curăță râșnițele.\n3. Inventar rapid lapte și patiserie; notează pierderile.\n4. Checklist de închidere semnat." },
       { id: "p3", title: "Standardele barului", body: "### Rețetele de bază\n- **Espresso**: 18 g → 38 g, 27–30 s\n- **Flat white**: dublu espresso + 140 ml lapte, 60–62 °C\n- **Cappuccino**: espresso + 150 ml lapte, spumă 1,5 cm\n- **Filtru (V60)**: 15 g / 250 g apă, 93 °C, 3:00\n\n### Reguli\n- Nu servim nimic ce nu am fi mândri să bem noi.\n- Orice băutură ratată se reface, fără discuție." },
       { id: "p4", title: "Curățenie & siguranța alimentară", body: "- Registrele de temperatură se completează de 2 ori pe zi.\n- Lapte deschis: maxim 48 h, etichetat cu data.\n- Lavete separate pe culori: bar, sală, toaletă.\n- Plan de curățenie săptămânal afișat în zona de spălare." },
@@ -216,12 +217,14 @@ window.MOKUM_DEMO = function () {
     ]
   };
 
+  // Direcția de ospitalitate: conținut real, preluat din Mokum Brandbook v2.0.
   var hospitality = {
     chapters: [
-      { id: "h1", title: "Direcția", body: "Ospitalitatea Mokum înseamnă să **fii gazdă, nu vânzător**. Clientul intră la noi acasă.\n\n### Promisiunea Mokum\nTe vedem, te recunoaștem, îți facem ziua puțin mai bună." },
-      { id: "h2", title: "Ritualul Mokum în 7 pași", body: "1. **Salut în 10 secunde**, cu contact vizual, chiar dacă ești ocupat.\n2. **Numele**: întrebăm și folosim numele clienților fideli.\n3. **Ascultare**: întrebăm cum le place cafeaua, nu doar ce comandă.\n4. **Recomandare personală**: o sugestie, nu o listă.\n5. **Prezentarea băuturii**: o propoziție despre ce bea.\n6. **Check-in** după 2–3 minute la masă.\n7. **La revedere** pe nume, cu invitația de a reveni." },
-      { id: "h3", title: "Tonul vocii", body: "- Cald, simplu, fără jargon tehnic dacă nu ne e cerut.\n- Spunem „cu drag”, nu „nu-i problemă”.\n- Umor da, ironie nu." },
-      { id: "h4", title: "Ce nu facem niciodată", body: "- Nu lăsăm un client să aștepte fără să-l vedem.\n- Nu discutăm probleme interne în fața clienților.\n- Nu folosim telefonul personal la bar." }
+      { id: "h1", title: "Misiune și promisiune", body: "### Misiune\n**Mutăm autoritatea din discurs în ceașcă.**\n\nUn espresso bine extras este o afirmație pe care oaspetele trebuie să o creadă pe cuvânt. Munca noastră este să o demonstrăm: prin metodă, prin oameni, prin spațiu și prin felul în care primim.\n\n### Promisiune\n> Oricine intră la Mokum pleacă știind ceva ce nu știa la intrare: despre cafea sau despre cum se simte să fii bine primit." },
+      { id: "h2", title: "Cine este Mokum", body: "Arhetipurile sunt busola care decide ton, vizual, limbaj și comportament pe toate canalele, în această ordine.\n\n### 1. Expertul (primar)\n„Cunoașterea este formă. Tehnica este respectul.” Cea mai veche cafenea de specialitate din oraș: capital de competență, nu nostalgie.\n- **Cum:** conținut care educă: origine, extracție, profil de gust. Niciodată „cel mai bun”, mereu „iată de ce”.\n\n### 2. Creatorul (secundar)\n„Forma contează la fel de mult ca fondul.” Audiența are ochi exersat.\n- **Cum:** documentarea deciziilor de design. Nu „am renovat”, ci „iată de ce am ales această finisare”.\n\n### 3. Omul Comunității (terțiar)\n„Locul unde te simți bine primit în mod firesc.”\n- **Cum:** recunoașterea oaspetelui fidel. Evenimente mici, recurente. Ospitalitate fără rezerve." },
+      { id: "h3", title: "Principiile serviciului", body: "1. **Demonstrăm, nu declarăm.** Orice afirmație este susținută de context sau proces. Fără superlative nefondate.\n2. **Forma contează cât fondul.** Un pahar, o etichetă, un caption se tratează cu aceeași seriozitate ca extracția.\n3. **Ospitalitate firească.** Calmă, atentă, fără efuziune. Oaspetele este recunoscut, nu procesat.\n4. **Timpul este un ingredient.** 16 ani de practică, un Nel Drip de 4 minute, o tăcere calibrată înainte de un anunț. Nu grăbim nimic din ce contează." },
+      { id: "h4", title: "Cum vorbește Mokum", body: "Tonul derivă direct din arhetipuri. Nu există un ton „de marketing” separat de cum vorbesc oamenii din bar.\n\n- **Calm, precis:** „Cafeaua asta vine din Etiopia, procesată natural. O să simți echilibru în ceașcă.” Niciodată: „Cea mai bună cafea din oraș!”\n- **Informat, fără aroganță:** „Am schimbat sitele din portafiltre pentru extracții mai precise și mai curate.” Niciodată: „Noi știm cel mai bine.”\n- **Cald, fără efuziune:** „Ne bucurăm că ești din nou pe la noi.” Niciodată: „Familia Mokum te iubește!”\n- **Direct, fără umpluturi:** „Deschidem la 8. Noul bar, luna viitoare.” Niciodată: „Suntem încântați să anunțăm că în curând…”\n\n### Reguli\n- Propoziții scurte. Mokum nu explică, arată.\n- Fără superlative.\n- Același ton peste tot: postare, DM, meniu, conversația de la bar.\n- Fără emoji în titluri." },
+      { id: "h5", title: "Ce păstrăm, ce actualizăm", body: "**Mokum nu se reinventează. Se actualizează.** Orice mesaj care sugerează că „totul era greșit înainte” este greșit.\n\n### Ce păstrăm\n- Numele și locul\n- Comunitatea existentă\n- Calitatea reală ca singur argument\n- Paleta de culori\n\n### Ce actualizăm\n- Logo-ul, tipografia, spațiul, barul, metoda\n- Felul în care comunicăm\n\n### Ce nu facem niciodată\n- Hype, superlative, exces\n- Nostalgie ca argument\n- Comunicare „de marketing” separată de cum vorbesc oamenii din bar" }
     ]
   };
 
@@ -286,7 +289,25 @@ window.MOKUM_DEMO = function () {
     ]
   };
 
+  var actions = {
+    items: [
+      { id: "a1", title: "Licență web Heading Pro", desc: "Licența comercială desktop + web pe numele Mokum, înainte de primul material tipărit.", area: "Brand", owner: "ATC", due: "2026-10-31", status: "doing", priority: true },
+      { id: "a2", title: "Pahar The Rise 8 / 12 oz", desc: "Dieline final la furnizor, print flexo într-o singură culoare.", area: "Brand", owner: "Owner", due: "2026-11-10", status: "review", priority: false },
+      { id: "a3", title: "Pungă 250 g: migrare la Heading Pro", desc: "Dieline-ul v1 folosește încă Montserrat și Fraunces; se migrează la următorul tiraj.", area: "Brand", owner: "ATC", due: "2026-11-20", status: "todo", priority: false },
+      { id: "a4", title: "Tasting cards Mokum × The Underdog", desc: "85 × 135 mm, carton negru 350 gsm; câte un card la fiecare lot nou.", area: "Bar", owner: "Head barista", due: "2026-11-05", status: "doing", priority: false },
+      { id: "a5", title: "Meniu v2 la tipar", desc: "A4 landscape, Nisip, fără fotografii; categoria Breakthrough verificată.", area: "Sală", owner: "Manager", due: "2026-10-28", status: "review", priority: false },
+      { id: "a6", title: "Training: ospitalitate firească", desc: "Sesiune cu toată echipa pe principii și tonul vocii din brandbook.", area: "Oameni", owner: "ATC", due: "2026-11-12", status: "todo", priority: true },
+      { id: "a7", title: "Service espressor depășit", desc: "Programare la service; schimb garnituri grup.", area: "Operațiuni", owner: "Head barista", due: "2026-10-20", status: "todo", priority: false },
+      { id: "a8", title: "Evaluări trimestriale Q4", desc: "Punctaje pe criteriile ATC pentru toți bariștii.", area: "Oameni", owner: "Manager", due: "2026-12-15", status: "todo", priority: false },
+      { id: "a9", title: "Sesiune foto: lumină naturală", desc: "Produs, bariști, spațiu. Fără stocuri, fără filtre.", area: "Brand", owner: "Owner", due: "2026-11-25", status: "todo", priority: false },
+      { id: "a10", title: "Buget 2027 și ținte P&L", desc: "Prime cost ≤ 58%, EBITDA ≥ 15%.", area: "Financiar", owner: "Owner", due: "2026-12-05", status: "doing", priority: false },
+      { id: "a11", title: "Profil Google actualizat", desc: "Program, meniu, fotografii reale.", area: "Sală", owner: "Manager", due: "2026-10-15", status: "done", priority: false },
+      { id: "a12", title: "Brandbook v2.0 aprobat", desc: "Identitate, caracter și sistem vizual.", area: "Brand", owner: "ATC", due: "2026-10-01", status: "done", priority: false }
+    ]
+  };
+
   return {
+    actions: actions,
     pl: pl, kpi: kpi, team: team, courses: courses, org: org, raci: raci, jobs: jobs,
     playbook: playbook, hospitality: hospitality, cjm: cjm, equipment: equipment, contacts: contacts
   };

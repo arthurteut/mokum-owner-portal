@@ -5,7 +5,7 @@ munca Around The Corner (ATC) pentru rebranding.
 
 | Grup | Secțiuni |
 | --- | --- |
-| Conducere | Panou (rezumat), P&L lunar cu marje, prime cost și EBITDA, KPI-uri cu ținte |
+| Conducere | Panou (rezumat), Plan de acțiune (board), P&L lunar cu marje, prime cost și EBITDA, KPI-uri cu ținte |
 | Oameni | Echipa & punctajul overall al fiecărui barista, Organigramă, RACI, Fișele posturilor |
 | Experiența Mokum | Direcția de ospitalitate, Customer Journey Map, Playbook |
 | Academia ATC | Cursurile ATC și cine le-a absolvit |
@@ -39,7 +39,7 @@ Repo-ul poate fi public: în cod nu există date reale. Cheia Supabase din
 
 ## Configurarea Supabase
 
-1. Rulează `supabase/migrations/0001_portal.sql` în proiect.
+1. Rulează în ordine `supabase/migrations/0001_portal.sql` și `0002_actions.sql`.
 2. **Authentication → Providers → Email**: activ; **Sign-ups**: dezactivat
    (conturile se creează doar din dashboard, prin *Invite user*).
 3. **Authentication → URL Configuration**: Site URL = adresa portalului.
@@ -61,5 +61,14 @@ Publicare: GitHub Pages (Settings → Pages → branch-ul dorit, root).
 
 ## Branding
 
-Co-branding Mokum × Around The Corner. Culorile Mokum sunt provizorii
-(`--mokum` în `assets/style.css`) și se înlocuiesc cu paleta din rebranding.
+Urmează Mokum Brandbook v2.0: paleta (Espresso, Cacao, Prăjire, Caramel, Nisip,
+Cărbune, Alb) cu Nisip dominant și Caramel doar ca accent, logo-ul vectorial
+original (`assets/mokum-logo.svg`, extras din brandbook, nemodificat) și
+lockup-ul de co-branding Mokum × Around The Corner (Mokum primul, „×”,
+partenerul la înălțimea x, spațiu 1x).
+
+**Tipografie:** Heading Pro Bold și Book. Fișierele cu licență web se pun în
+`assets/fonts/` (`HeadingPro-Bold.woff2`, `HeadingPro-Book.woff2`) și se
+activează blocul `@font-face` din `assets/style.css`. Până atunci portalul
+folosește Arial, substitutul de sistem prevăzut de brandbook. Versiunile
+„Trial” nu se publică: licența lor permite doar uz personal, necomercial.
