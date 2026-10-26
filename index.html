@@ -44,8 +44,7 @@
         <input type="password" id="new-pass2" autocomplete="new-password" required minlength="8"></label>
       <button type="submit" class="btn btn-primary btn-block">Salvează parola și intră</button>
     </form>
-    <p id="no-backend" class="note hidden">Baza de date nu e conectată. Poți explora portalul cu date exemplu, salvate doar în acest browser.</p>
-    <button type="button" id="demo-btn" class="btn btn-ghost btn-block">Deschide demo-ul cu date exemplu</button>
+    <p id="no-backend" class="note hidden">Portalul nu se poate conecta acum la baza de date. Reîncarcă pagina sau încearcă mai târziu.</p>
     <p id="gate-msg" class="msg" aria-live="polite"></p>
   </div>
   <p class="gate-foot">Mokum × Around The Corner</p>
@@ -110,7 +109,7 @@
 <dialog id="modal" class="modal" aria-labelledby="modal-title"></dialog>
 
 <script src="assets/config.js"></script>
-<script src="assets/demo-data.js"></script>
+<script src="assets/templates.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="assets/app.js"></script>
 </body>

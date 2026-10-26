@@ -26,16 +26,26 @@ se salvează automat. În **Setări & backup** ai export/import JSON.
   `Σ(notă × pondere) / Σ(5 × pondere) × 100`. ≥ 85 excelent, ≥ 70 solid,
   ≥ 55 în dezvoltare, sub 55 necesită plan.
 
-## Moduri de funcționare
+## Acces și date
 
-1. **Demo**: fără bază de date; date exemplu fictive, salvate doar în browser.
-2. **Online (Supabase)**: login cu email + parolă; datele stau în tabela
-   `portal_docs` (un rând JSON per secțiune), protejate prin RLS. Doar emailurile
-   din `portal_members` au acces. Fiecare salvare se păstrează și în
-   `portal_history`, ca să putem reveni la o versiune anterioară.
+Portalul nu are mod demo: fără cont nu se vede nimic în afară de ecranul de
+login. Login cu email + parolă; datele stau în tabela `portal_docs` (un rând
+JSON per secțiune), protejate prin RLS. Doar emailurile din `portal_members`
+au acces. Fiecare salvare se păstrează și în `portal_history`, ca să putem
+reveni la o versiune anterioară.
 
-Repo-ul poate fi public: în cod nu există date reale. Cheia Supabase din
-`assets/config.js` este cea publică (anon), iar accesul e impus de politicile RLS.
+`assets/templates.js` conține doar structurile de pornire (liniile P&L,
+definițiile KPI, criteriile de evaluare, RACI și fișele posturilor, etapele
+Customer Journey, Direcția de ospitalitate din brandbook). Cifrele, numele și
+telefoanele stau doar în baza de date, niciodată în acest repo public.
+
+### Retragerea accesului cuiva
+
+```sql
+delete from public.portal_members where email = 'email@persoana';
+```
+Efectul e imediat: politicile RLS nu mai returnează date pentru acel email.
+Apoi, din **Authentication → Users**, șterge și contul persoanei.
 
 ## Configurarea Supabase
 

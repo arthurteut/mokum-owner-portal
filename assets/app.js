@@ -3,7 +3,6 @@
   "use strict";
 
   var CFG = window.MOKUM_CONFIG || {};
-  var DEMO_KEY = "mokum-portal-demo-v3";
   var THEME_KEY = "mokum-portal-theme";
   var SECTIONS = ["actions", "pl", "kpi", "team", "courses", "org", "raci", "jobs", "playbook", "hospitality", "cjm", "equipment", "contacts"];
   var MONTHS = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
@@ -71,7 +70,7 @@
   }
 
   var state = {
-    mode: null,          // "demo" | "live"
+    mode: null,          // "live" după autentificare
     user: null,
     data: {},
     meta: {},            // section -> { updated_at, updated_by }
@@ -255,24 +254,22 @@
 
   // ---------- Date: șabloane & normalizare ----------
   function emptyData() {
-    var demo = window.MOKUM_DEMO();
+    var T = window.MOKUM_TEMPLATES;
     var y = String(new Date().getFullYear());
-    var lines = demo.pl.years[Object.keys(demo.pl.years)[0]].lines.map(function (l) {
-      return { id: l.id, group: l.group, name: l.name, labor: !!l.labor, values: blank12() };
-    });
-    var years = {}; years[y] = { lines: lines };
+    var years = {};
+    years[y] = { lines: T.plLines.map(function (l) { return { id: l.id, group: l.group, name: l.name, labor: !!l.labor, values: blank12() }; }) };
     return {
       actions: { items: [] },
-      pl: { currency: "RON", targets: demo.pl.targets, years: years },
-      kpi: { items: demo.kpi.items.map(function (k) { var c = clone(k); c.values = {}; return c; }) },
-      team: { criteria: demo.team.criteria, members: [] },
+      pl: { currency: "RON", targets: clone(T.plTargets), years: years },
+      kpi: { items: T.kpi.map(function (k) { var c = clone(k); c.values = {}; return c; }) },
+      team: { criteria: clone(T.criteria), members: [] },
       courses: { items: [] },
       org: { nodes: [] },
-      raci: { roles: demo.raci.roles, tasks: [] },
-      jobs: { items: [] },
-      playbook: { chapters: [] },
-      hospitality: { chapters: demo.hospitality.chapters },
-      cjm: { stages: demo.cjm.stages.map(function (s) { return { id: s.id, name: s.name, emotion: 0 }; }), rows: demo.cjm.rows, cells: {} },
+      raci: clone(T.raci),
+      jobs: clone(T.jobs),
+      playbook: { chapters: clone(T.playbook) },
+      hospitality: { chapters: clone(T.hospitality) },
+      cjm: { stages: clone(T.cjmStages), rows: clone(T.cjmRows), cells: {} },
       equipment: { items: [] },
       contacts: { items: [] }
     };
@@ -326,12 +323,6 @@
   function flush(sec) {
     if (!pending[sec]) return Promise.resolve();
     pending[sec] = false;
-    if (state.mode === "demo") {
-      lsSet(DEMO_KEY, JSON.stringify(state.data));
-      state.meta[sec] = { updated_at: new Date().toISOString(), updated_by: "demo" };
-      setSaveState("Salvat local ✓");
-      return Promise.resolve();
-    }
     saving++;
     var row = {
       section: sec,
@@ -357,15 +348,6 @@
     var dirty = SECTIONS.some(function (s) { return pending[s]; });
     if (dirty) { flushAll(); e.preventDefault(); e.returnValue = ""; }
   });
-
-  function loadDemo() {
-    var saved = lsGet(DEMO_KEY), data = null;
-    if (saved) { try { data = JSON.parse(saved); } catch (e) { data = null; } }
-    state.data = normalize(data || window.MOKUM_DEMO());
-    state.mode = "demo";
-    state.user = { email: "demo" };
-    startApp();
-  }
 
   function loadLive(user) {
     state.user = user;
@@ -413,7 +395,6 @@
   function showSetPassword() {
     showGate();
     $("login-form").classList.add("hidden");
-    $("demo-btn").classList.add("hidden");
     $("setpass-form").classList.remove("hidden");
     $("new-pass").focus();
   }
@@ -425,7 +406,6 @@
     if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase && window.supabase.createClient) {
       sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
     }
-    $("demo-btn").addEventListener("click", loadDemo);
     if (!sb) { showGate(); return; }
 
     $("login-form").addEventListener("submit", function (e) {
@@ -454,7 +434,6 @@
       sb.auth.updateUser({ password: p1 }).then(function (res) {
         if (res.error) { gateMsg(authError(res.error)); return; }
         needsPassword = false;
-        $("demo-btn").classList.remove("hidden");
         loadLive(res.data.user);
       });
     });
@@ -497,9 +476,9 @@
     $("gate").classList.add("hidden");
     $("app").classList.remove("hidden");
     var badge = $("mode-badge");
-    badge.textContent = state.mode === "demo" ? "Demo · date exemplu" : "Online";
-    badge.className = "badge " + (state.mode === "demo" ? "demo" : "live");
-    var who = state.mode === "demo" ? "Demo" : (state.member && state.member.name) || state.user.email;
+    badge.textContent = "Online";
+    badge.className = "badge live";
+    var who = (state.member && state.member.name) || state.user.email;
     $("user-name").textContent = who;
     $("user-avatar").textContent = initials(who);
     setSaveState("");
@@ -571,7 +550,7 @@
     var html = "";
     if (state.edit && state.route !== "panou" && state.route !== "plan") {
       html += '<div class="edit-banner">Mod editare: modificările se salvează automat' +
-        (state.mode === "demo" ? " (doar în acest browser, în demo)." : " pentru toți cei cu acces.") + "</div>";
+        " pentru toți cei cu acces.</div>";
     }
     try {
       html += VIEWS[state.route]();
@@ -715,16 +694,13 @@
     "action-open": function (d) { openAction(d.id); return null; },
     export: function () { exportJSON(); return null; },
     import: function () { $("import-file") && $("import-file").click(); return null; },
-    "load-demo": function () {
-      if (!window.confirm("Înlocuiești toate datele din portal cu datele exemplu?")) return null;
-      var demo = window.MOKUM_DEMO();
-      SECTIONS.forEach(function (s) { state.data[s] = demo[s]; markDirty(s); });
-      return "";
-    },
-    "reset-demo": function () {
-      if (!window.confirm("Resetezi demo-ul la datele exemplu inițiale?")) return null;
-      lsDel(DEMO_KEY);
-      state.data = normalize(window.MOKUM_DEMO());
+    "clear-examples": function () {
+      var list = "Plan de acțiune, P&L, valorile KPI, cursuri, echipamente, Playbook și Customer Journey Map";
+      if (!window.confirm("Golești datele exemplu din: " + list + "?\n\nEchipa, organigrama, RACI, fișele posturilor, contactele și Direcția de ospitalitate rămân neatinse.")) return null;
+      var base = emptyData();
+      ["actions", "pl", "courses", "equipment", "playbook", "cjm"].forEach(function (k) { state.data[k] = base[k]; markDirty(k); });
+      state.data.kpi.items.forEach(function (k) { k.values = {}; });
+      markDirty("kpi");
       return "";
     }
   };
@@ -1743,16 +1719,16 @@
   VIEWS.setari = function () {
     var theme = lsGet(THEME_KEY) || "auto";
     var h = '<div class="grid grid-2">';
-    h += '<div class="card"><h3>Cont</h3><p class="small">' + (state.mode === "demo"
-      ? "Ești în <strong>modul demo</strong>. Datele sunt exemple și se salvează doar în acest browser."
-      : "Conectat ca <strong>" + esc(state.user.email) + "</strong>" + (state.member && state.member.role ? " (" + esc(state.member.role) + ")" : "") + ". Modificările se salvează în baza de date a portalului.") + "</p>" +
+    h += '<div class="card"><h3>Cont</h3><p class="small">' +
+      "Conectat ca <strong>" + esc(state.user.email) + "</strong>" + (state.member && state.member.role ? " (" + esc(state.member.role) + ")" : "") + ". Modificările se salvează în baza de date a portalului.</p>" +
       '<label class="field"><span>Temă</span><select class="inp" id="theme-select">' +
       [["auto", "Automat (ca sistemul)"], ["light", "Luminos"], ["dark", "Întunecat"]].map(function (o) { return '<option value="' + o[0] + '"' + (theme === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") +
       "</select></label></div>";
     h += '<div class="card"><h3>Backup & import</h3><p class="small muted">Exportă tot conținutul portalului într-un fișier JSON sau importă un backup.</p>' +
       '<div class="toolbar">' + btn("export", "Exportă JSON") + " " + btn("import", "Importă JSON") +
       '<input type="file" id="import-file" accept="application/json,.json" class="hidden"></div>' +
-      (state.mode === "demo" ? btn("reset-demo", "Resetează demo-ul", {}, "btn-ghost btn-danger") : btn("load-demo", "Încarcă datele exemplu", {}, "btn-ghost btn-danger")) + "</div>";
+      '<p class="small muted" style="margin-top:14px">Dacă în portal au rămas date exemplu (cifre P&L, echipamente, cursuri, acțiuni fictive), le poți goli de aici.</p>' +
+      btn("clear-examples", "Golește datele exemplu", {}, "btn-ghost btn-danger") + "</div>";
     h += "</div>";
     var labels = { actions: "Plan de acțiune", pl: "P&L", kpi: "KPI-uri", team: "Echipa", courses: "Cursuri", org: "Organigramă", raci: "RACI", jobs: "Fișe post", playbook: "Playbook", hospitality: "Ospitalitate", cjm: "Customer Journey", equipment: "Echipamente", contacts: "Contacte" };
     h += '<div class="section"><h2>Ultimele actualizări</h2><div class="table-wrap"><table class="tbl"><thead><tr><th>Secțiune</th><th>Actualizat</th><th>De</th></tr></thead><tbody>' +
