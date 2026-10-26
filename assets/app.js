@@ -53,6 +53,18 @@
     ] }
   ];
 
+  // Fotografiile Mokum (assets/photos/…). Cât timp o cale e goală, se afișează
+  // zona de culoare din brandbook (lumini, umbre sau tonuri medii).
+  var PHOTOS = {
+    gate: "", hero: "", ospitalitate: "", playbook: "", cjm: "", organigrama: "",
+    raci: "", fise: "", cursuri: "", contacte: ""
+  };
+  function photo(key, tone, extraCls, inner) {
+    var src = PHOTOS[key];
+    return '<div class="photo ' + (tone || "ph-shadow") + (src ? " has-img" : "") + (extraCls ? " " + extraCls : "") + '"' +
+      (src ? ' style="--img:url(\'' + esc(src) + '\')"' : "") + ">" + (inner || "") + "</div>";
+  }
+
   var state = {
     mode: null,          // "demo" | "live"
     user: null,
@@ -385,6 +397,7 @@
     el.classList.toggle("ok", !!ok);
   }
   function showGate() {
+    if (PHOTOS.gate) { $("gate-photo").classList.add("has-img"); $("gate-photo").style.setProperty("--img", "url('" + PHOTOS.gate + "')"); }
     $("app").classList.add("hidden");
     $("gate").classList.remove("hidden");
     var live = !!sb;
@@ -1202,21 +1215,36 @@
       }
     }
     var r = last ? plRatios(last.calc, last.m) : null;
-    var arrow = '<svg class="arrow" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"/></svg>';
-    h += '<div class="hero">' +
-      '<div><h3>Venituri și EBITDA</h3>' + (labels.length ? barChart(labels, [{ name: "Venituri", color: "var(--chart-1)", values: rev }, { name: "EBITDA", color: "var(--chart-1)", values: ebitda, hatch: true }], { w: 440, h: 220, bar: 26 }) : '<div class="muted">Încă nu există cifre în P&L.</div>') + "</div>" +
-      gauge(kpiPct, "KPI-uri în țintă") +
-      '<div class="hero-num"><a href="#/plan"><div class="big">' + doing + '</div><div class="foot"><span>Acțiuni<br>în lucru</span>' + arrow + "</div></a></div>" +
-      '<div class="hero-num"><a href="#/pl"><div class="big">' + (r ? compactMoney(r.rev) : "—") + '</div><div class="foot"><span>Venituri<br>' + (last ? esc(MONTHS_LONG[last.m]) : "luna curentă") + "</span>" + arrow + "</div></a></div>" +
+    var dueEq = d.equipment.items.filter(function (e) { var c = serviceStatus(e).c; return c === "bad" || c === "warn"; }).length;
+    var monthName = last ? MONTHS_LONG[last.m].charAt(0).toUpperCase() + MONTHS_LONG[last.m].slice(1) + " " + last.year : "Luna aceasta";
+    var lead = r
+      ? "EBITDA " + pct(r.ebitdaPct) + ", prime cost " + pct(r.primePct) + ". " + doing + (doing === 1 ? " acțiune în lucru" : " acțiuni în lucru") +
+        (dueEq ? ", " + dueEq + (dueEq === 1 ? " echipament de verificat." : " echipamente de verificat.") : ".")
+      : "Încă nu există cifre în P&L. Completează prima lună și panoul prinde viață.";
+    h += '<div class="hero"><div class="hero-text">' +
+      '<span class="eyebrow dotted">Mokum · Timișoara · Est. 2010</span>' +
+      '<h2 class="display"><span class="b">' + esc(monthName) + '</span><br><span class="l">în cifre și oameni</span></h2>' +
+      '<p class="hero-lead">' + esc(lead) + "</p>" +
+      '<div class="hero-stats">' +
+      '<a class="hs" href="#/pl"><span class="hs-v">' + (r ? nf0.format(r.rev / 1e3) + "k<small> " + esc(cur()) + "</small>" : "—") + '</span><span class="hs-l">Venituri</span></a>' +
+      '<a class="hs" href="#/pl"><span class="hs-v">' + (r ? pct(r.ebitdaPct) : "—") + '</span><span class="hs-l">EBITDA</span></a>' +
+      '<a class="hs" href="#/kpi"><span class="hs-v">' + (isNum(kpiPct) ? nf0.format(kpiPct) + "%" : "—") + '</span><span class="hs-l">KPI în țintă</span></a>' +
+      '<a class="hs" href="#/plan"><span class="hs-v">' + doing + '</span><span class="hs-l">Acțiuni în lucru</span></a>' +
+      "</div></div>" +
+      photo("hero", "ph-shadow", "hero-photo", '<span class="photo-tag">Noul bar Mokum</span>') +
       "</div>";
 
     // Planul de acțiune
-    h += '<div class="card-head"><h2 class="section-title" style="margin:0">Plan de acțiune</h2><a href="#/plan">Deschide planul</a></div>' + boardHtml();
+    h += '<div class="card-head"><div><span class="eyebrow dotted">Împreună cu Around The Corner</span><h2 class="title-split" style="margin-top:6px"><span class="b">Plan</span> <span class="l">de acțiune</span></h2></div><a href="#/plan">Deschide planul</a></div>' + boardHtml();
 
     // Luna în cifre
     if (r) {
-      h += '<div class="section"><h2>' + esc(MONTHS_LONG[last.m].charAt(0).toUpperCase() + MONTHS_LONG[last.m].slice(1)) + " " + esc(last.year) + " în cifre</h2>";
-      h += '<div class="grid grid-4">' +
+      h += '<div class="section"><span class="eyebrow dotted">P&L</span><h2 class="title-split" style="margin:6px 0 16px"><span class="b">' + esc(monthName) + '</span> <span class="l">în detaliu</span></h2>';
+      h += '<div class="grid split-21">' +
+        '<div class="card"><div class="card-head"><h3>Venituri și EBITDA</h3><a href="#/pl">P&L</a></div>' +
+        barChart(labels, [{ name: "Venituri", color: "var(--chart-1)", values: rev }, { name: "EBITDA", color: "var(--chart-1)", values: ebitda, hatch: true }], { w: 640, h: 230, bar: 26 }) + "</div>" +
+        '<div class="card" style="display:flex;flex-direction:column;justify-content:center">' + gauge(kpiPct, "KPI-uri în țintă") + "</div></div>";
+      h += '<div class="grid grid-4" style="margin-top:18px">' +
         statCard("Marjă brută", pct(r.grossPct), "COGS " + pct(r.cogsPct) + " · " + vsTarget(r.cogsPct, tg.cogsPct, true)) +
         statCard("EBITDA", moneyC(r.ebitda), pct(r.ebitdaPct) + " din venituri · " + vsTarget(r.ebitdaPct, tg.ebitdaPct, false)) +
         statCard("Prime cost", pct(r.primePct), "personal " + pct(r.laborPct) + " · " + vsTarget(r.primePct, tg.primePct, true)) +
@@ -1249,15 +1277,15 @@
       '<div class="stat"><div class="label">Training finalizat</div><div class="value">' + (isNum(acPct) ? nf0.format(acPct) + "%" : "—") + "</div></div></div>" +
       '<div class="bar" style="margin-top:14px"><span style="width:' + (acPct || 0) + '%"></span></div>' +
       '<div class="small muted" style="margin-top:6px">' + done + " din " + possible + " cursuri × oameni</div></div>";
-    h += '<div class="section"><h2>Ce cere atenție</h2><div class="grid grid-3">' + kpiCard + eqCard + acCard + "</div></div>";
+    h += '<div class="section"><span class="eyebrow dotted">Operațiuni</span><h2 class="title-split" style="margin:6px 0 16px"><span class="b">Ce cere</span> <span class="l">atenție</span></h2><div class="grid grid-3">' + kpiCard + eqCard + acCard + "</div></div>";
 
     // Documentele Mokum
-    var quick = [["ospitalitate", "Direcția de ospitalitate", d.hospitality.chapters.length + " capitole"], ["playbook", "Playbook", d.playbook.chapters.length + " capitole"],
-      ["cjm", "Customer Journey Map", d.cjm.stages.length + " etape"], ["organigrama", "Organigramă", d.org.nodes.length + " roluri"],
-      ["raci", "RACI", d.raci.tasks.length + " activități"], ["fise", "Fișele posturilor", d.jobs.items.length + " posturi"],
-      ["cursuri", "Cursuri ATC", d.courses.items.length + " cursuri"], ["contacte", "Contacte", d.contacts.items.length + " contacte"]];
-    h += '<div class="section"><h2>Documentele Mokum</h2><div class="grid grid-4">' + quick.map(function (q) {
-      return '<a class="card" href="#/' + q[0] + '" style="text-decoration:none;color:inherit"><div class="label-caps">' + esc(q[2]) + '</div><h3 style="margin:6px 0 0">' + esc(q[1]) + "</h3></a>";
+    var quick = [["ospitalitate", "Direcția de ospitalitate", d.hospitality.chapters.length + " capitole", "ph-shadow"], ["playbook", "Playbook", d.playbook.chapters.length + " capitole", "ph-mid"],
+      ["cjm", "Customer Journey Map", d.cjm.stages.length + " etape", "ph-light"], ["cursuri", "Cursuri ATC", d.courses.items.length + " cursuri", "ph-shadow"],
+      ["organigrama", "Organigramă", d.org.nodes.length + " roluri", "ph-mid"], ["raci", "RACI", d.raci.tasks.length + " activități", "ph-light"],
+      ["fise", "Fișele posturilor", d.jobs.items.length + " posturi", "ph-shadow"], ["contacte", "Contacte", d.contacts.items.length + " contacte", "ph-mid"]];
+    h += '<div class="section"><span class="eyebrow dotted">Biblioteca</span><h2 class="title-split" style="margin:6px 0 16px"><span class="b">Documentele</span> <span class="l">Mokum</span></h2><div class="doc-grid">' + quick.map(function (q) {
+      return '<a class="doc-card" href="#/' + q[0] + '">' + photo(q[0], q[3]) + '<span class="label-caps">' + esc(q[2]) + "</span><h3>" + esc(q[1]) + "</h3></a>";
     }).join("") + "</div></div>";
     return h;
   };
@@ -1549,9 +1577,9 @@
     return h;
   };
 
-  function docView(sec, intro) {
+  function docView(sec, intro, quote, photoKey) {
     var chs = state.data[sec].chapters, ed = state.edit;
-    var h = '<p class="intro">' + intro + "</p>";
+    var h = photo(photoKey, "ph-shadow", "doc-hero", "<blockquote>" + esc(quote) + "</blockquote>") + '<p class="intro">' + intro + "</p>";
     h += '<div class="toolbar"><span class="spacer"></span>' + (ed ? btn("add", "+ capitol", { sec: sec, path: "chapters", tpl: "chapter" }) : "") +
       ' <button type="button" class="btn btn-sm btn-ghost" onclick="window.print()">Printează</button></div>';
     if (!chs.length) return h + '<div class="empty">Niciun capitol încă.</div>';
@@ -1571,10 +1599,10 @@
     return h + '<div class="doc-layout">' + toc + "<div>" + body + "</div></div>";
   }
   VIEWS.playbook = function () {
-    return docView("playbook", "Playbook-ul operațional Mokum: cum arată o zi bună, standardele barului și cum gestionăm situațiile dificile.");
+    return docView("playbook", "Playbook-ul operațional Mokum: cum arată o zi bună, standardele barului și cum gestionăm situațiile dificile.", "Timpul este un ingredient. Nu grăbim nimic din ce contează.", "playbook");
   };
   VIEWS.ospitalitate = function () {
-    return docView("hospitality", "Direcția de ospitalitate stabilită împreună cu Around The Corner: ce simte clientul la Mokum și cum ajungem acolo.");
+    return docView("hospitality", "Direcția de ospitalitate stabilită împreună cu Around The Corner, din Mokum Brandbook v2.0: misiunea, arhetipurile, principiile și tonul vocii.", "Ospitalitate firească. Calmă, atentă, fără efuziune.", "ospitalitate");
   };
 
   VIEWS.cjm = function () {
