@@ -107,12 +107,12 @@ window.MOKUM_DEMO = function () {
   var team = {
     criteria: criteria,
     members: [
-      { id: "m1", name: "Andrei Pop", role: "Head barista", since: "2023-03-01", lastReview: "2026-09-15", scores: sc([5, 5, 4, 5, 4, 5, 4]), courses: ["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10", "k11"], notes: "Pregătit pentru rolul de trainer intern. Următorul pas: cursul de leadership la bar finalizat cu proiect." },
+      { id: "m1", name: "Andrei Pop", role: "Head barista / Manager", since: "2023-03-01", lastReview: "2026-09-15", scores: sc([5, 5, 4, 5, 4, 5, 4]), courses: ["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10", "k11"], notes: "Pregătit pentru rolul de trainer intern. Următorul pas: cursul de leadership la bar finalizat cu proiect." },
       { id: "m2", name: "Ioana Marin", role: "Barista", since: "2024-05-10", lastReview: "2026-09-15", scores: sc([4, 5, 5, 4, 4, 4, 5]), courses: ["k1", "k2", "k3", "k4", "k7", "k8", "k9"], notes: "Cea mai bună la ospitalitate; o folosim ca exemplu la onboarding." },
       { id: "m3", name: "Vlad Stoica", role: "Barista", since: "2024-11-01", lastReview: "2026-09-16", scores: sc([4, 3, 3, 5, 4, 3, 4]), courses: ["k1", "k2", "k3", "k5", "k9"], notes: "Foarte rapid; de lucrat pe recomandări și interacțiune." },
       { id: "m4", name: "Maria Dumitru", role: "Barista", since: "2025-06-15", lastReview: "2026-09-16", scores: sc([3, 4, 4, 3, 5, 3, 4]), courses: ["k1", "k3", "k7", "k9"], notes: "Plan: calibrare cu Andrei, 2 sesiuni pe săptămână în octombrie." },
       { id: "m5", name: "Radu Ilie", role: "Barista", since: "2026-02-01", lastReview: "2026-09-17", scores: sc([3, 3, 4, 3, 3, 3, 4]), courses: ["k1", "k7"], notes: "În perioada de dezvoltare; are nevoie de cursul de lapte până la final de noiembrie." },
-      { id: "m6", name: "Elena Toma", role: "Runner / Casier", since: "2025-09-01", lastReview: "2026-09-17", scores: sc([2, 2, 5, 4, 4, 4, 5]), courses: ["k7", "k8", "k9"], notes: "Vrea să treacă la bar: începe traseul de barista în ianuarie." }
+      { id: "m6", name: "Elena Toma", role: "Runner", since: "2025-09-01", lastReview: "2026-09-17", scores: sc([2, 2, 5, 4, 4, 4, 5]), courses: ["k7", "k8", "k9"], notes: "Vrea să treacă la bar: începe traseul de barista în ianuarie." }
     ]
   };
 
@@ -134,75 +134,324 @@ window.MOKUM_DEMO = function () {
 
   var org = {
     nodes: [
-      { id: "n1", title: "Owner", person: "Mokum · Timișoara", parent: "", external: false },
-      { id: "n2", title: "Manager cafenea", person: "de numit", parent: "n1", external: false },
-      { id: "n3", title: "Head barista", person: "Andrei Pop", parent: "n2", external: false },
-      { id: "n4", title: "Bariști", person: "Ioana, Vlad, Maria, Radu", parent: "n3", external: false },
-      { id: "n5", title: "Shift lead sală", person: "rotativ", parent: "n2", external: false },
-      { id: "n6", title: "Runner / Casier", person: "Elena Toma", parent: "n5", external: false },
-      { id: "n7", title: "Contabil", person: "firmă externă", parent: "n1", external: true },
-      { id: "n8", title: "Around The Corner", person: "consultanță & training", parent: "n1", external: true }
+      { id: "n1", title: "Owner", person: "Proprietar", parent: "", external: false },
+      { id: "n2", title: "Head barista / Manager", person: "Andrei Pop", parent: "n1", external: false },
+      { id: "n3", title: "Barista", person: "Ioana, Vlad, Maria, Radu", parent: "n2", external: false },
+      { id: "n4", title: "Runner", person: "Elena Toma", parent: "n2", external: false },
+      { id: "n5", title: "The Underdog", person: "prăjitoria parteneră, Atena", parent: "n2", external: true },
+      { id: "n6", title: "Around The Corner", person: "consultanță & training", parent: "n1", external: true }
     ]
   };
 
-  var R = ["Owner", "Manager", "Head barista", "Barista", "Contabil", "ATC"].map(function (n, i) {
-    return { id: "ro" + (i + 1), name: n };
-  });
-  var taskN = 0;
-  function row(area, name, codes) {
-    var cells = {};
-    R.forEach(function (r, i) { cells[r.id] = codes[i] === "-" ? "" : codes[i]; });
-    return { id: "t" + (++taskN), area: area, name: name, cells: cells };
-  }
   var raci = {
-    roles: R,
-    tasks: [
-      row("Financiar", "Buget anual & P&L", ["A", "R", "I", "-", "C", "C"]),
-      row("Financiar", "Închidere lunară & raportare", ["I", "A", "-", "-", "R", "I"]),
-      row("Financiar", "Prețuri & meniu", ["A", "R", "C", "I", "-", "C"]),
-      row("Operațiuni", "Comenzi furnizori", ["I", "A", "R", "I", "-", "-"]),
-      row("Operațiuni", "Inventar lunar", ["I", "A", "R", "R", "C", "-"]),
-      row("Operațiuni", "Programul turelor", ["I", "A", "C", "I", "-", "-"]),
-      row("Calitate", "Calibrare zilnică espresso", ["-", "I", "A", "R", "-", "C"]),
-      row("Calitate", "Mentenanță echipamente", ["I", "A", "R", "I", "-", "C"]),
-      row("Calitate", "Standardul de ospitalitate", ["A", "R", "R", "R", "-", "C"]),
-      row("Oameni", "Recrutare", ["A", "R", "C", "-", "-", "C"]),
-      row("Oameni", "Onboarding & training", ["I", "C", "A", "-", "-", "R"]),
-      row("Oameni", "Evaluări trimestriale bariști", ["I", "A", "R", "I", "-", "C"]),
-      row("Marketing", "Social media & comunicare", ["C", "A", "C", "I", "-", "-"]),
-      row("Marketing", "Evenimente & colaborări", ["A", "R", "C", "I", "-", "C"])
+    "roles": [
+      {
+        "id": "ro-owner",
+        "name": "Owner"
+      },
+      {
+        "id": "ro-hb",
+        "name": "Head barista / Manager"
+      },
+      {
+        "id": "ro-bar",
+        "name": "Barista"
+      },
+      {
+        "id": "ro-run",
+        "name": "Runner"
+      },
+      {
+        "id": "ro-ud",
+        "name": "The Underdog"
+      },
+      {
+        "id": "ro-atc",
+        "name": "ATC"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "t1",
+        "area": "Financiar",
+        "name": "Buget anual & P&L",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "",
+          "ro-run": "",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t2",
+        "area": "Financiar",
+        "name": "Închidere lunară & raportare",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "",
+          "ro-run": "",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t3",
+        "area": "Financiar",
+        "name": "Prețuri & meniu",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "C",
+          "ro-run": "I",
+          "ro-ud": "C",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t4",
+        "area": "Cafea",
+        "name": "Selecția cafelelor (oferta The Underdog)",
+        "cells": {
+          "ro-owner": "C",
+          "ro-hb": "A",
+          "ro-bar": "C",
+          "ro-run": "",
+          "ro-ud": "R",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t5",
+        "area": "Cafea",
+        "name": "Comenzi de cafea",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "I",
+          "ro-run": "",
+          "ro-ud": "I",
+          "ro-atc": ""
+        }
+      },
+      {
+        "id": "t6",
+        "area": "Cafea",
+        "name": "Rețete & profiluri de extracție",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "C",
+          "ro-run": "",
+          "ro-ud": "C",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t7",
+        "area": "Cafea",
+        "name": "Calibrare zilnică espresso",
+        "cells": {
+          "ro-owner": "",
+          "ro-hb": "A",
+          "ro-bar": "R",
+          "ro-run": "",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t8",
+        "area": "Operațiuni",
+        "name": "Comenzi lapte & consumabile",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "",
+          "ro-run": "R",
+          "ro-ud": "",
+          "ro-atc": ""
+        }
+      },
+      {
+        "id": "t9",
+        "area": "Operațiuni",
+        "name": "Inventar lunar",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "R",
+          "ro-run": "R",
+          "ro-ud": "",
+          "ro-atc": ""
+        }
+      },
+      {
+        "id": "t10",
+        "area": "Operațiuni",
+        "name": "Mentenanță echipamente",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "R",
+          "ro-run": "",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t11",
+        "area": "Operațiuni",
+        "name": "Curățenie & HACCP",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "R",
+          "ro-run": "R",
+          "ro-ud": "",
+          "ro-atc": ""
+        }
+      },
+      {
+        "id": "t12",
+        "area": "Sală",
+        "name": "Standardul de ospitalitate",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "R",
+          "ro-run": "R",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t13",
+        "area": "Sală",
+        "name": "Flux sală, debarasare, vitrină",
+        "cells": {
+          "ro-owner": "",
+          "ro-hb": "A",
+          "ro-bar": "C",
+          "ro-run": "R",
+          "ro-ud": "",
+          "ro-atc": ""
+        }
+      },
+      {
+        "id": "t14",
+        "area": "Oameni",
+        "name": "Recrutare",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "",
+          "ro-run": "",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t15",
+        "area": "Oameni",
+        "name": "Onboarding & training",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "I",
+          "ro-run": "I",
+          "ro-ud": "C",
+          "ro-atc": "R"
+        }
+      },
+      {
+        "id": "t16",
+        "area": "Oameni",
+        "name": "Evaluări trimestriale",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "I",
+          "ro-run": "I",
+          "ro-ud": "",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t17",
+        "area": "Oameni",
+        "name": "Programul turelor",
+        "cells": {
+          "ro-owner": "I",
+          "ro-hb": "A",
+          "ro-bar": "I",
+          "ro-run": "I",
+          "ro-ud": "",
+          "ro-atc": ""
+        }
+      },
+      {
+        "id": "t18",
+        "area": "Comunitate",
+        "name": "Social media & comunicare",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "",
+          "ro-run": "",
+          "ro-ud": "C",
+          "ro-atc": "C"
+        }
+      },
+      {
+        "id": "t19",
+        "area": "Comunitate",
+        "name": "Evenimente Mokum × The Underdog",
+        "cells": {
+          "ro-owner": "A",
+          "ro-hb": "R",
+          "ro-bar": "I",
+          "ro-run": "I",
+          "ro-ud": "C",
+          "ro-atc": "C"
+        }
+      }
     ]
   };
 
   var jobs = {
-    items: [
+    "items": [
       {
-        id: "j1", title: "Manager cafenea", reportsTo: "Owner", schedule: "Normă întreagă, L–V + 1 weekend din 2",
-        purpose: "Conduce operațiunile zilnice ale Mokum, astfel încât fiecare client să primească experiența Mokum, iar cafeneaua să-și atingă țintele financiare.",
-        responsibilities: "- Programul turelor și acoperirea vârfurilor\n- Comenzi, stocuri și relația cu furnizorii\n- Închiderea lunară cu contabilul; urmărirea P&L și a KPI-urilor\n- Recrutare și evaluări împreună cu head barista\n- Social media și evenimente",
-        skills: "- Minim 2 ani în HoReCa, din care 1 an coordonare\n- Excel / Google Sheets la nivel mediu\n- Comunicare calmă în situații tensionate",
-        kpis: "- Prime cost ≤ 58%\n- Bon mediu ≥ 32 RON\n- Rating Google ≥ 4,8\n- Rotația personalului < 30% / an"
+        "id": "j-hb",
+        "title": "Head barista / Manager",
+        "reportsTo": "Owner",
+        "schedule": "Normă întreagă",
+        "purpose": "Conduce barul și operațiunile zilnice Mokum: calitatea fiecărei cești, echipa și relația cu The Underdog, astfel încât cafeneaua să-și atingă țintele.",
+        "responsibilities": "- Calibrarea zilnică și rețetele barului, împreună cu profilurile recomandate de The Underdog\n- Comenzi de cafea, lapte și consumabile; controlul stocurilor și al pierderilor\n- Programul turelor, onboarding și training, împreună cu Around The Corner\n- Mentenanța echipamentelor și standardele HACCP\n- Urmărirea P&L și a KPI-urilor cu owner-ul; închiderea lunară\n- Evaluarea trimestrială a echipei",
+        "skills": "- Experiență solidă ca barista în specialty coffee\n- Cursurile ATC de bar, nivel avansat, și leadership la bar\n- Organizare, comunicare calmă, feedback clar",
+        "kpis": "- Prime cost ≤ 58%\n- Calibrări efectuate 100%\n- Waste ≤ 3% din COGS\n- Media echipei ≥ 75 puncte"
       },
       {
-        id: "j2", title: "Head barista", reportsTo: "Manager cafenea", schedule: "Normă întreagă, ture de deschidere",
-        purpose: "Garantează calitatea fiecărei cești și dezvoltă echipa de bariști după standardele Around The Corner.",
-        responsibilities: "- Calibrarea zilnică și rețetele barului\n- Training și onboarding pentru bariști noi\n- Mentenanța zilnică/săptămânală a echipamentelor\n- Comenzi de cafea și lapte; controlul pierderilor\n- Evaluarea trimestrială a bariștilor",
-        skills: "- Minim 3 ani experiență ca barista în specialty\n- Cursurile ATC de bar, nivel avansat\n- Capacitatea de a da feedback clar și constructiv",
-        kpis: "- Calibrări efectuate 100%\n- Waste ≤ 3% din COGS\n- Timp de servire ≤ 4 min\n- Media echipei ≥ 75 puncte"
+        "id": "j-bar",
+        "title": "Barista",
+        "reportsTo": "Head barista / Manager",
+        "schedule": "Ture rotative",
+        "purpose": "Prepară băuturile la standardul Mokum și primește fiecare oaspete firesc: calm, atent, fără efuziune.",
+        "responsibilities": "- Prepararea băuturilor după rețetele barului\n- Calibrarea la deschidere și la schimbarea cafelei\n- Primirea oaspeților după principiile din Direcția de ospitalitate\n- Recomandări despre cafelele The Underdog: origine, proces, note de gust\n- Curățenia stației și checklist-urile HACCP",
+        "skills": "- Pasiune pentru cafea și oameni\n- Cursurile ATC de bază: espresso, lapte, ospitalitate, HACCP\n- Atenție la detalii, lucru în echipă",
+        "kpis": "- Punctaj overall ≥ 70\n- Rată upsell ≥ 25%\n- Zero abateri HACCP"
       },
       {
-        id: "j3", title: "Barista", reportsTo: "Head barista", schedule: "Normă întreagă sau parțială, ture rotative",
-        purpose: "Prepară băuturile la standardul Mokum și creează pentru fiecare client un moment memorabil.",
-        responsibilities: "- Prepararea băuturilor după rețetele barului\n- Primirea clienților după ritualul Mokum\n- Curățenia stației și completarea checklist-urilor\n- Recomandări de cafea și patiserie",
-        skills: "- Pasiune pentru cafea și oameni\n- Cursurile ATC de bază (espresso, lapte, ospitalitate, HACCP)\n- Atenție la detalii, lucru în echipă",
-        kpis: "- Punctaj overall ≥ 70\n- Rată upsell ≥ 25%\n- Zero abateri HACCP"
-      },
-      {
-        id: "j4", title: "Runner / Casier", reportsTo: "Shift lead sală", schedule: "Normă parțială, ture de vârf",
-        purpose: "Ține fluxul sălii fluid: primire, comenzi, livrare la masă, curățenie.",
-        responsibilities: "- Preluarea comenzilor și încasarea\n- Livrarea la masă și debarasarea\n- Vitrina de patiserie aranjată și etichetată\n- Sprijin pentru bar în vârf",
-        skills: "- Comunicare caldă și rapidă\n- Cursurile ATC de ospitalitate și HACCP",
-        kpis: "- Masa debarasată în < 3 min de la plecarea clientului\n- Upsell patiserie ≥ 25%"
+        "id": "j-run",
+        "title": "Runner",
+        "reportsTo": "Head barista / Manager",
+        "schedule": "Ture de vârf",
+        "purpose": "Ține fluxul sălii fluid: comenzi, livrare la masă, debarasare și vitrină, ca barul să se poată concentra pe cafea.",
+        "responsibilities": "- Preluarea comenzilor și încasarea\n- Livrarea la masă și debarasarea\n- Vitrina aranjată și etichetată\n- Comenzi de lapte și consumabile, la cererea head barista\n- Sprijin pentru bar în vârf",
+        "skills": "- Comunicare caldă și rapidă\n- Cursurile ATC de ospitalitate și HACCP",
+        "kpis": "- Masa debarasată în < 3 min\n- Upsell patiserie ≥ 25%"
       }
     ]
   };
@@ -276,7 +525,7 @@ window.MOKUM_DEMO = function () {
 
   var contacts = {
     items: [
-      { id: "ct1", name: "Prăjitoria (exemplu)", category: "Furnizor cafea", person: "Nume Prenume", phone: "0700 000 001", email: "comenzi@exemplu.ro", notes: "Comandă marți pentru livrare joi. Minim 5 kg." },
+      { id: "ct1", name: "The Underdog", category: "Prăjitorie parteneră", person: "", phone: "", email: "", web: "https://www.underdog.gr", notes: "Prăjitorie de specialitate din Atena, din 2015. Ofertă și prețuri wholesale prin formularul: https://www.underdog.gr/contact/" },
       { id: "ct2", name: "Ferma de lapte (exemplu)", category: "Furnizor lapte", person: "Nume Prenume", phone: "0700 000 002", email: "", notes: "Livrare zilnică 07:00." },
       { id: "ct3", name: "Distribuitor lapte vegetal (exemplu)", category: "Furnizor lapte", person: "", phone: "0700 000 003", email: "office@exemplu.ro", notes: "Ovăz barista, migdale, soia." },
       { id: "ct4", name: "Patiseria (exemplu)", category: "Furnizor food", person: "Nume Prenume", phone: "0700 000 004", email: "", notes: "Comandă cu o zi înainte până la 16:00." },

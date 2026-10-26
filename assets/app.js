@@ -3,7 +3,7 @@
   "use strict";
 
   var CFG = window.MOKUM_CONFIG || {};
-  var DEMO_KEY = "mokum-portal-demo-v2";
+  var DEMO_KEY = "mokum-portal-demo-v3";
   var THEME_KEY = "mokum-portal-theme";
   var SECTIONS = ["actions", "pl", "kpi", "team", "courses", "org", "raci", "jobs", "playbook", "hospitality", "cjm", "equipment", "contacts"];
   var MONTHS = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
@@ -307,7 +307,7 @@
     stage: function () { return { id: uid("s"), name: "Etapă nouă", emotion: 0 }; },
     cjmrow: function () { return { id: uid("r"), name: "Rând nou" }; },
     equipment: function () { return { id: uid("e"), name: "Echipament nou", brand: "", serial: "", bought: "", supplier: "", lastService: "", nextService: "", warranty: "", status: "Funcțional", notes: "" }; },
-    contact: function () { return { id: uid("ct"), name: "Contact nou", category: "Furnizor", person: "", phone: "", email: "", notes: "" }; }
+    contact: function () { return { id: uid("ct"), name: "Contact nou", category: "Furnizor", person: "", phone: "", email: "", web: "", notes: "" }; }
   };
 
   // ---------- Stocare ----------
@@ -1540,7 +1540,8 @@
       if (!ed && t.area !== lastArea) { row += '<tr class="area"><td colspan="' + cols + '">' + esc(t.area) + "</td></tr>"; lastArea = t.area; }
       var a = 0, rr = 0;
       roles.forEach(function (ro) { var v = t.cells[ro.id]; if (v === "A") a++; if (v === "R") rr++; });
-      var check = a === 1 && rr >= 1 ? pill("good", "OK") : pill("warn", a === 0 ? "Lipsește A" : a > 1 ? a + "× A" : "Lipsește R");
+      // Un singur „A”; dacă nu e niciun „R”, cel cu „A” execută singur.
+      var check = a === 1 ? pill("good", rr ? "OK" : "OK · A execută") : pill("warn", a === 0 ? "Lipsește A" : a + "× A");
       row += "<tr><td>" + (ed ? '<div style="display:grid;gap:4px">' + field("raci", "tasks." + i + ".area", t.area, { label: "Zonă" }) + field("raci", "tasks." + i + ".name", t.name, { label: "Activitate" }) + "</div>" : esc(t.name)) + "</td>" +
         roles.map(function (ro) {
           var v = t.cells[ro.id] || "";
@@ -1720,10 +1721,10 @@
     var shown = items.map(function (c, i) { return { c: c, i: i }; }).filter(function (x) {
       if (cat && x.c.category !== cat) return false;
       if (!q) return true;
-      return [x.c.name, x.c.category, x.c.person, x.c.phone, x.c.email, x.c.notes].join(" ").toLowerCase().indexOf(q) !== -1;
+      return [x.c.name, x.c.category, x.c.person, x.c.phone, x.c.email, x.c.web, x.c.notes].join(" ").toLowerCase().indexOf(q) !== -1;
     });
     if (!shown.length) return h + '<div class="empty">Niciun contact găsit.</div>';
-    var cols = [["name", "Nume"], ["category", "Categorie"], ["person", "Persoană"], ["phone", "Telefon", "tel"], ["email", "Email", "email"], ["notes", "Note"]];
+    var cols = [["name", "Nume"], ["category", "Categorie"], ["person", "Persoană / rol"], ["phone", "Telefon", "tel"], ["email", "Email", "email"], ["web", "Web", "url"], ["notes", "Note"]];
     h += '<div class="table-wrap"><table class="tbl"><thead><tr>' + cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") + (ed ? "<th></th>" : "") + "</tr></thead><tbody>" +
       shown.map(function (x) {
         var c = x.c, i = x.i;
@@ -1732,6 +1733,7 @@
           if (ed) return "<td>" + field("contacts", "items." + i + "." + col[0], v, { type: col[2] || "text", label: col[1] }) + "</td>";
           if (col[2] === "tel" && v) return '<td style="white-space:nowrap"><a href="tel:' + esc(String(v).replace(/[^\d+]/g, "")) + '">' + esc(v) + "</a></td>";
           if (col[2] === "email" && v) return '<td><a href="mailto:' + esc(v) + '">' + esc(v) + "</a></td>";
+          if (col[2] === "url" && /^https?:\/\//.test(v || "")) return '<td><a href="' + esc(v) + '" target="_blank" rel="noopener">' + esc(String(v).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")) + "</a></td>";
           return "<td>" + (col[0] === "name" ? "<strong>" + esc(v) + "</strong>" : esc(v)) + "</td>";
         }).join("") + (ed ? '<td class="act">' + delBtn("contacts", "items", i, "contactul") + "</td>" : "") + "</tr>";
       }).join("") + "</tbody></table></div>";
