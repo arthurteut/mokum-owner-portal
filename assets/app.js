@@ -56,13 +56,18 @@
   // Fotografiile Mokum (assets/photos/…). Cât timp o cale e goală, se afișează
   // zona de culoare din brandbook (lumini, umbre sau tonuri medii).
   var PHOTOS = {
-    gate: "", hero: "", ospitalitate: "", playbook: "", cjm: "", organigrama: "",
-    raci: "", fise: "", cursuri: "", contacte: ""
+    gate: "assets/photos/latte-turnare.jpg",
+    hero: "assets/photos/bar-randare-front.jpg",
+    ospitalitate: "assets/photos/espresso-masa.jpg",
+    playbook: "assets/photos/bar-randare-strada.jpg",
+    cursuri: "assets/photos/latte-turnare.jpg",
+    cjm: "assets/photos/bar-randare-strada.jpg",
+    organigrama: "", raci: "", fise: "", contacte: ""
   };
   function photo(key, tone, extraCls, inner) {
     var src = PHOTOS[key];
     return '<div class="photo ' + (tone || "ph-shadow") + (src ? " has-img" : "") + (extraCls ? " " + extraCls : "") + '"' +
-      (src ? ' style="--img:url(\'' + esc(src) + '\')"' : "") + ">" + (inner || "") + "</div>";
+      (src ? ' style="background-image:url(\'' + esc(src) + '\')"' : "") + ">" + (inner || "") + "</div>";
   }
 
   var state = {
@@ -397,7 +402,7 @@
     el.classList.toggle("ok", !!ok);
   }
   function showGate() {
-    if (PHOTOS.gate) { $("gate-photo").classList.add("has-img"); $("gate-photo").style.setProperty("--img", "url('" + PHOTOS.gate + "')"); }
+    if (PHOTOS.gate) { $("gate-photo").classList.add("has-img"); $("gate-photo").style.backgroundImage = "url('" + PHOTOS.gate + "')"; }
     $("app").classList.add("hidden");
     $("gate").classList.remove("hidden");
     var live = !!sb;
