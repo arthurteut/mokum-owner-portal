@@ -618,7 +618,7 @@ window.MOKUM_TEMPLATES = {
     {
       "id": "h1",
       "title": "Misiune și promisiune",
-      "body": "### Misiune\n**Mutăm autoritatea din discurs în ceașcă.**\n\nUn espresso bine extras este o afirmație pe care oaspetele trebuie să o creadă pe cuvânt. Munca noastră este să o demonstrăm: prin metodă, prin oameni, prin spațiu și prin felul în care primim.\n\n### Promisiune\n> Oricine intră la Mokum pleacă știind ceva ce nu știa la intrare: despre cafea sau despre cum se simte să fii bine primit."
+      "body": "### Misiune\n**Master the basics. Raise the level.**\n\nUn espresso bine extras este o afirmație pe care oaspetele trebuie să o creadă pe cuvânt. Munca noastră este să o demonstrăm: prin metodă, prin oameni, prin spațiu și prin felul în care primim.\n\n### Promisiune\n> Oricine intră la Mokum pleacă știind ceva ce nu știa la intrare: despre cafea sau despre cum se simte să fii bine primit."
     },
     {
       "id": "h2",
@@ -645,7 +645,7 @@ window.MOKUM_TEMPLATES = {
     {
       "id": "p1",
       "title": "Cine suntem",
-      "body": "Mokum a fost fondată în 2010, pe strada Eugeniu de Savoia, în Piața Unirii. A fost prima cafenea de specialitate din Timișoara și printre primele din România care a introdus cafeaua to-go ca un concept, nu ca un compromis.\n\nComunitatea formată în jurul ei, preponderent arhitecți și designeri, este o audiență cu ochi exersat, care evaluează înainte să consume. Nu trebuie construită de la zero: trebuie reactivată și onorată.\n\n> Mutăm autoritatea din discurs în ceașcă.\n\nDetaliile despre ton și serviciu sunt în **Direcția de ospitalitate**."
+      "body": "Mokum a fost fondată în 2010, pe strada Eugeniu de Savoia, în Piața Unirii. A fost prima cafenea de specialitate din Timișoara și printre primele din România care a introdus cafeaua to-go ca un concept, nu ca un compromis.\n\nComunitatea formată în jurul ei, preponderent arhitecți și designeri, este o audiență cu ochi exersat, care evaluează înainte să consume. Nu trebuie construită de la zero: trebuie reactivată și onorată.\n\n> Master the basics. Raise the level.\n\nDetaliile despre ton și serviciu sunt în **Direcția de ospitalitate**."
     }
   ],
   "cjmStages": [
