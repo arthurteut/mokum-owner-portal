@@ -530,6 +530,7 @@
   function route() {
     var id = (location.hash || "").replace(/^#\/?/, "") || "panou";
     if (!findNav(id) || !VIEWS[id]) id = "panou";
+    if (id !== state.route) state.ui.course = "";
     state.route = id;
     document.body.setAttribute("data-page", id);
     var nav = findNav(id);
@@ -692,6 +693,8 @@
     "set-ui": function (d) { state.ui[d.key] = d.val; return ""; },
     "action-new": function (d) { openAction(null, d.status); return null; },
     "action-open": function (d) { openAction(d.id); return null; },
+    "file-get": function (d) { downloadFile(d); return null; },
+    "file-del": function (d) { deleteFile(d); return null; },
     export: function () { exportJSON(); return null; },
     import: function () { $("import-file") && $("import-file").click(); return null; },
     "clear-examples": function () {
@@ -728,7 +731,8 @@
     });
     $("view").addEventListener("change", function (e) {
       var el = e.target;
-      if (el.hasAttribute("data-bind")) onFieldChange(el);
+      if (el.hasAttribute("data-upload-path")) uploadFiles(el);
+      else if (el.hasAttribute("data-bind")) onFieldChange(el);
       else if (el.hasAttribute("data-ui")) { state.ui[el.getAttribute("data-ui")] = el.value; rerender(); }
       else if (el.id === "import-file") importJSON(el.files && el.files[0]);
       else if (el.id === "theme-select") setTheme(el.value);
@@ -1170,6 +1174,90 @@
     input.addEventListener("blur", function () { setTimeout(close, 120); });
   }
 
+  // ---------- Materiale (Supabase Storage, bucket privat) ----------
+  var BUCKET = "materials";
+  function safeName(n) {
+    return String(n || "fisier").normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^A-Za-z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(-90) || "fisier";
+  }
+  function fmtSize(b) {
+    if (!isNum(b)) return "";
+    if (b >= 1048576) return nf1.format(b / 1048576) + " MB";
+    return nf0.format(Math.max(1, b / 1024)) + " KB";
+  }
+  function fileExt(n) { var m = /\.([A-Za-z0-9]{1,5})$/.exec(n || ""); return m ? m[1].toUpperCase() : "FIȘIER"; }
+  // Lista de fișiere a unui element (curs, capitol); în modul editare se pot urca și șterge.
+  function filesBlock(sec, path, files, title) {
+    files = files || [];
+    var ed = state.edit;
+    if (!files.length && !ed) return "";
+    var h = '<div class="files"><div class="files-head"><span class="label-caps">' + esc(title || "Materiale") + "</span>" +
+      (ed ? '<label class="btn btn-sm btn-ghost files-up">+ Adaugă fișiere<input type="file" multiple class="hidden" data-upload-sec="' + sec + '" data-upload-path="' + esc(path) + '"></label>' : "") + "</div>";
+    h += files.length ? files.map(function (f, i) {
+      return '<div class="file"><span class="file-ext">' + esc(fileExt(f.name)) + '</span><span class="file-name">' + esc(f.name) +
+        '<span class="small muted">' + esc(fmtSize(f.size)) + (f.uploadedAt ? " · " + fmtDate(String(f.uploadedAt).slice(0, 10)) : "") + "</span></span>" +
+        '<button type="button" class="btn btn-sm btn-primary" data-act="file-get" data-sec="' + sec + '" data-path="' + esc(path) + '" data-idx="' + i + '">Descarcă</button>' +
+        (ed ? ' <button type="button" class="iconbtn" data-act="file-del" data-sec="' + sec + '" data-path="' + esc(path) + '" data-idx="' + i + '" aria-label="Șterge fișierul" title="Șterge fișierul">✕</button>' : "") +
+        "</div>";
+    }).join("") : '<p class="small muted" style="margin:6px 0 0">Niciun fișier încă. Urcă DOCX, PDF sau fișele A4.</p>';
+    return h + "</div>";
+  }
+  function storageHint(err) {
+    var m = String(err && err.message || err || "");
+    if (/bucket not found|not found/i.test(m)) return "Spațiul de materiale nu e creat încă: rulează supabase/migrations/0003_materials.sql.";
+    if (/row-level security|unauthorized|permission/i.test(m)) return "Fără drept de acces la materiale: rulează 0003_materials.sql.";
+    return m;
+  }
+  function uploadFiles(input) {
+    var sec = input.getAttribute("data-upload-sec"), path = input.getAttribute("data-upload-path");
+    var list = Array.prototype.slice.call(input.files || []);
+    if (!list.length) return;
+    if (!sb) { alert("Portalul nu e conectat la baza de date."); return; }
+    var owner = getPath(state.data[sec], path.replace(/\.files$/, "")) || {};
+    var arr = getPath(state.data[sec], path);
+    if (!Array.isArray(arr)) { arr = []; setPath(state.data[sec], path, arr); }
+    setSaveState("Se încarcă " + list.length + (list.length === 1 ? " fișier…" : " fișiere…"));
+    var chain = Promise.resolve(), failed = [];
+    list.forEach(function (file) {
+      chain = chain.then(function () {
+        var key = sec + "/" + safeName(owner.id || "general") + "/" + Date.now() + "-" + safeName(file.name);
+        return sb.storage.from(BUCKET).upload(key, file, { contentType: file.type || "application/octet-stream" }).then(function (res) {
+          if (res.error) { failed.push(file.name + ": " + storageHint(res.error)); return; }
+          arr.push({ name: file.name, path: key, size: file.size, type: file.type, uploadedAt: new Date().toISOString(), by: state.user && state.user.email });
+        });
+      });
+    });
+    chain.then(function () {
+      if (failed.length) { setSaveState("Nu s-a încărcat tot", true); alert("Nu s-au încărcat:\n" + failed.join("\n")); }
+      markDirty(sec);
+      rerender();
+    });
+  }
+  function downloadFile(d) {
+    var f = (getPath(state.data[d.sec], d.path) || [])[Number(d.idx)];
+    if (!f || !sb) return;
+    setSaveState("Se descarcă " + f.name + "…");
+    // Descărcăm ca blob, ca pagina să nu plece de pe portal.
+    sb.storage.from(BUCKET).download(f.path).then(function (res) {
+      if (res.error) { setSaveState(""); alert("Fișierul nu a putut fi descărcat: " + storageHint(res.error)); return; }
+      var url = URL.createObjectURL(res.data), a = document.createElement("a");
+      a.href = url; a.download = f.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      setSaveState("");
+    });
+  }
+  function deleteFile(d) {
+    var arr = getPath(state.data[d.sec], d.path) || [], f = arr[Number(d.idx)];
+    if (!f || !window.confirm("Ștergi fișierul „" + f.name + "”?")) return;
+    sb.storage.from(BUCKET).remove([f.path]).then(function (res) {
+      if (res.error) { alert("Nu s-a putut șterge: " + storageHint(res.error)); return; }
+      arr.splice(Number(d.idx), 1);
+      markDirty(d.sec);
+      rerender();
+    });
+  }
+
   // ================= VIEWS =================
   var VIEWS = {};
 
@@ -1574,9 +1662,11 @@
         return '<div class="card chapter" id="' + id + '"><div class="chapter-edit">' +
           '<div style="display:flex;gap:8px;align-items:center">' + field(sec, "chapters." + i + ".title", c.title, { label: "Titlu capitol" }) + moveBtns(sec, "chapters", i) + delBtn(sec, "chapters", i, "capitolul") + "</div>" +
           field(sec, "chapters." + i + ".body", c.body, { type: "textarea", rows: 12, label: "Conținut" }) +
-          '<p class="hint">Formatare: „### Titlu”, „- listă”, „1. pași”, „**îngroșat**”, „> citat”, [text](https://link).</p></div></div>';
+          '<p class="hint">Formatare: „### Titlu”, „- listă”, „1. pași”, „**îngroșat**”, „> citat”, [text](https://link).</p>' +
+          filesBlock(sec, "chapters." + i + ".files", c.files, "Fișiere (DOCX, PDF, fișe A4)") + "</div></div>";
       }
-      return '<article class="card chapter prose" id="' + id + '"><h2>' + (i + 1) + ". " + esc(c.title) + "</h2>" + md(c.body) + "</article>";
+      return '<article class="card chapter prose" id="' + id + '"><h2>' + (i + 1) + ". " + esc(c.title) + "</h2>" + md(c.body) +
+        filesBlock(sec, "chapters." + i + ".files", c.files, "Fișiere de descărcat") + "</article>";
     }).join("");
     return h + '<div class="doc-layout">' + toc + "<div>" + body + "</div></div>";
   }
@@ -1625,11 +1715,70 @@
     return h;
   };
 
+  var STATUS_PILL = { complet: ["good", "Complet"], in_lucru: ["warn", "În lucru"], de_confirmat: ["neutral", "De confirmat"] };
+  function statusPill(st) { var x = STATUS_PILL[st]; return x ? pill(x[0], x[1]) : ""; }
+  function levelPill(l) { return pill(l === "Avansat" ? "bad" : l === "Intermediar" ? "warn" : "good", esc(l || "")); }
+
+  function courseDetail(c, i) {
+    var members = state.data.team.members;
+    var who = members.filter(function (m) { return (m.courses || []).indexOf(c.id) !== -1; });
+    var h = '<div class="toolbar">' + btn("set-ui", "← Toate cursurile", { key: "course", val: "" }) + "</div>";
+    h += '<div class="card course-hero"><span class="eyebrow dotted">' + esc(c.module || "Curs ATC") + "</span>" +
+      '<h2 class="title-split" style="margin:6px 0 10px">' + esc(c.title) + "</h2>" +
+      '<div class="meta">' + levelPill(c.level) + (c.duration ? pill("neutral", esc(c.duration)) : "") + statusPill(c.status) +
+      (c.formats || []).map(function (f) { return pill("neutral", esc(f)); }).join("") + "</div>" +
+      (c.subtitle ? '<p class="lead">' + esc(c.subtitle) + "</p>" : "") +
+      (c.audience ? '<p class="small"><strong>Pentru:</strong> ' + esc(c.audience) + "</p>" : "") +
+      (!c.subtitle && c.desc ? "<p>" + esc(c.desc) + "</p>" : "") +
+      '<p class="small muted">Absolvit de ' + who.length + "/" + members.length + (who.length ? ": " + who.map(function (m) { return esc(m.name); }).join(", ") : "") + "</p></div>";
+
+    var side = "";
+    if (c.evaluation) {
+      side += '<div class="card"><h3>Evaluare</h3>' +
+        (c.evaluation.written ? '<p class="small"><strong>Scris:</strong> ' + esc(c.evaluation.written) + "</p>" : "") +
+        (c.evaluation.practical ? '<p class="small"><strong>Practic:</strong> ' + esc(c.evaluation.practical) + "</p>" : "") + "</div>";
+    }
+    if (c.rules && c.rules.length) {
+      side += '<div class="card"><h3>Reguli și standarde</h3><table class="tbl"><tbody>' + c.rules.map(function (r) {
+        return "<tr><td>" + esc(r.k) + '</td><td class="num"><strong>' + esc(r.v) + "</strong></td></tr>";
+      }).join("") + "</tbody></table></div>";
+    }
+    if (c.includes && c.includes.length) {
+      side += '<div class="card"><h3>Materiale incluse</h3><ul class="small" style="margin:0;padding-left:18px">' +
+        c.includes.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+    }
+    side += '<div class="card">' + filesBlock("courses", "items." + i + ".files", c.files, "Fișierele cursului") +
+      (!(c.files || []).length && !state.edit ? '<h3>Fișierele cursului</h3><p class="small muted">Încă nu e urcat niciun fișier. Activează Editare și apasă „+ Adaugă fișiere”.</p>' : "") + "</div>";
+
+    var lessons = c.lessons || [];
+    var main = lessons.length ? lessons.map(function (l, li) {
+      var chs = l.chapters || [];
+      return '<details class="card lesson"' + (li === 0 ? " open" : "") + "><summary>" +
+        '<span class="lesson-nr">' + esc(String(l.nr != null ? l.nr : li + 1)) + "</span>" +
+        '<span class="lesson-t"><strong>' + esc(l.title || "Lecție") + "</strong>" + (l.subtitle ? '<span class="small muted">' + esc(l.subtitle) + "</span>" : "") + "</span>" +
+        '<span class="lesson-meta">' + (chs.length ? pill("neutral", chs.length + (chs.length === 1 ? " capitol" : " capitole")) : "") + statusPill(l.status) + "</span></summary>" +
+        (l.note ? '<p class="small muted">' + esc(l.note) + "</p>" : "") +
+        (chs.length ? '<ol class="chapters">' + chs.map(function (ch) {
+          return '<li><div class="ch-head"><span class="ch-nr">' + esc(ch.nr || "") + "</span><strong>" + esc(ch.title || "Titlu de confirmat") + "</strong>" + statusPill(ch.status) + "</div>" +
+            (ch.topics && ch.topics.length ? '<ul class="topics">' + ch.topics.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>" : "") + "</li>";
+        }).join("") + "</ol>" : "") +
+        (l.tools && l.tools.length ? '<p class="small"><strong>Calculatoare:</strong> ' + l.tools.map(esc).join(" · ") + "</p>" : "") +
+        (l.materials && l.materials.length ? '<p class="small"><strong>Materiale:</strong> ' + l.materials.map(esc).join(" · ") + "</p>" : "") +
+        filesBlock("courses", "items." + i + ".lessons." + li + ".files", l.files, "Fișierele lecției") +
+        "</details>";
+    }).join("") : '<div class="empty">Cursul nu are încă lecții detaliate.</div>';
+
+    return h + '<div class="course-layout"><div>' + main + '</div><aside class="course-side">' + side + "</aside></div>";
+  }
+
   VIEWS.cursuri = function () {
     var items = state.data.courses.items, members = state.data.team.members, ed = state.edit;
+    if (state.ui.course) {
+      for (var k = 0; k < items.length; k++) if (items[k].id === state.ui.course) return courseDetail(items[k], k);
+    }
     var mods = {}; items.forEach(function (c) { if (c.module) mods[c.module] = true; });
     var mod = state.ui.courseModule || "";
-    var h = '<p class="intro">Programul de training Around The Corner pentru Mokum. Bifele de absolvire se fac din pagina Echipa, pe fiecare persoană.</p>';
+    var h = '<p class="intro">Programul de training Around The Corner pentru Mokum. Deschide un curs ca să vezi lecțiile, capitolele și fișierele de descărcat. Bifele de absolvire se fac din pagina Echipa.</p>';
     h += '<div class="toolbar">' + uiSelect("courseModule", mod, [{ v: "", l: "Toate modulele" }].concat(Object.keys(mods).map(function (m) { return { v: m, l: m }; })), "Modul") +
       '<span class="spacer"></span>' + (ed ? btn("add", "+ curs", { sec: "courses", path: "items", tpl: "course" }) : "") + "</div>";
     var shown = items.map(function (c, i) { return { c: c, i: i }; }).filter(function (x) { return !mod || x.c.module === mod; });
@@ -1638,20 +1787,20 @@
       var c = x.c, i = x.i, p = "items." + i;
       var who = members.filter(function (m) { return (m.courses || []).indexOf(c.id) !== -1; });
       var share = members.length ? (who.length / members.length) * 100 : 0;
+      var nFiles = (c.files || []).length + (c.lessons || []).reduce(function (a, l) { return a + (l.files || []).length; }, 0);
       if (ed) {
         return '<div class="card course"><div style="display:grid;gap:6px">' + field("courses", p + ".title", c.title, { label: "Titlu" }) +
           '<div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">' + field("courses", p + ".module", c.module, { label: "Modul", placeholder: "Modul" }) +
           field("courses", p + ".level", c.level, { type: "select", options: ["Bază", "Intermediar", "Avansat"] }) + field("courses", p + ".duration", c.duration, { label: "Durată", placeholder: "Durată" }) + "</div>" +
           field("courses", p + ".desc", c.desc, { type: "textarea", rows: 3, label: "Descriere" }) +
-          field("courses", p + ".link", c.link, { type: "url", label: "Link material", placeholder: "https://… (PDF, video, Drive)" }) +
-          '<div style="text-align:right">' + delBtn("courses", "items", i, "cursul") + "</div></div></div>";
+          '<div style="display:flex;justify-content:space-between;gap:8px">' + btn("set-ui", "Lecții și fișiere →", { key: "course", val: c.id }) + delBtn("courses", "items", i, "cursul") + "</div></div></div>";
       }
-      return '<div class="card course"><h3>' + esc(c.title) + '</h3><div class="meta">' + pill("neutral", esc(c.module || "—")) + pill(c.level === "Avansat" ? "bad" : c.level === "Intermediar" ? "warn" : "good", esc(c.level || "")) +
-        (c.duration ? pill("neutral", esc(c.duration)) : "") + "</div><p>" + esc(c.desc) + "</p>" +
+      return '<div class="card course"><h3>' + esc(c.title) + '</h3><div class="meta">' + pill("neutral", esc(c.module || "—")) + levelPill(c.level) +
+        (c.duration ? pill("neutral", esc(c.duration)) : "") + statusPill(c.status) + "</div><p>" + esc(c.subtitle || c.desc) + "</p>" +
         '<div class="small muted" style="display:flex;justify-content:space-between"><span>Absolvit de ' + who.length + "/" + members.length + "</span><span>" + nf0.format(share) + "%</span></div>" +
-        '<div class="bar" style="margin:4px 0 10px"><span style="width:' + share + '%"></span></div>' +
-        (who.length ? '<div class="small muted">' + who.map(function (m) { return esc(m.name.split(" ")[0]); }).join(", ") + "</div>" : "") +
-        (/^https?:\/\//.test(c.link || "") ? '<a class="btn btn-sm btn-ghost" style="margin-top:10px" target="_blank" rel="noopener" href="' + esc(c.link) + '">Deschide materialul</a>' : "") +
+        '<div class="bar" style="margin:4px 0 14px"><span style="width:' + share + '%"></span></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + btn("set-ui", "Lecții și capitole →", { key: "course", val: c.id }, "btn-primary") +
+        (nFiles ? '<span class="small muted">' + nFiles + (nFiles === 1 ? " fișier" : " fișiere") + "</span>" : "") + "</div>" +
         "</div>";
     }).join("") + "</div>";
     return h;

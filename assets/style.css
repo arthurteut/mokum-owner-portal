@@ -692,3 +692,52 @@ body[data-page="panou"] .topbar .iconbtn-plain:hover { background: var(--hero-li
   .gate-quote p { font-size: 28px; }
   .title-split { font-size: 24px; }
 }
+
+/* Cursuri: detaliu pe lecții și capitole */
+.course-hero .lead { font-size: 18px; margin: 14px 0 8px; max-width: 760px; }
+.course-hero .meta, .course .meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.course-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; margin-top: 18px; align-items: start; }
+.course-side { display: grid; gap: 18px; position: sticky; top: 100px; }
+.lesson { margin-bottom: 14px; }
+.lesson summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 44px 1fr auto; gap: 14px; align-items: center; }
+.lesson summary::-webkit-details-marker { display: none; }
+.lesson[open] summary { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.lesson-nr {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--espresso); color: var(--nisip); font-weight: 700; font-size: 16px;
+}
+.lesson-t { display: flex; flex-direction: column; gap: 2px; font-size: 17px; }
+.lesson-meta { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.chapters { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.chapters > li { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+.ch-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.ch-nr { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--accent-ink); min-width: 26px; }
+.topics { margin: 8px 0 0 36px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; list-style: none; }
+.topics li { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--surface); }
+
+/* Fișiere de descărcat */
+.files { margin-top: 16px; }
+.files-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.files-up { cursor: pointer; }
+.file { display: grid; grid-template-columns: 52px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.file:first-of-type { border-top: none; }
+.file-ext {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-align: center; padding: 6px 4px; border-radius: 8px;
+  background: var(--espresso); color: var(--nisip);
+}
+.file-name { display: flex; flex-direction: column; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.prose .files .btn { text-decoration: none; }
+
+@media (max-width: 1100px) {
+  .course-layout { grid-template-columns: 1fr; }
+  .course-side { position: static; }
+}
+@media (max-width: 520px) {
+  .lesson summary { grid-template-columns: 36px 1fr; }
+  .lesson-meta { grid-column: 1 / -1; justify-content: flex-start; }
+  .lesson-nr { width: 36px; height: 36px; }
+  .topics { margin-left: 0; }
+  .file { grid-template-columns: 44px 1fr; }
+  .file .btn, .file .iconbtn { grid-column: 2; justify-self: start; }
+}
+.course-side .tbl .num { white-space: normal; overflow-wrap: anywhere; }
